@@ -1,2 +1,6 @@
 #Exclding the data
 /Data
+/src/Components/__pycache__/
+/src/Dashboard/__pycache__/
+/src/Producer/__pycache__/
+/src/Exceptions/__pycache__/
