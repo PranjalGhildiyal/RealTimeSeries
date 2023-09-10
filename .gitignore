@@ -1,6 +1,11 @@
 #Exclding the data
 /Data
+
+# Excluding python cache files
 /src/Components/__pycache__/
-/src/Dashboard/__pycache__/
-/src/Producer/__pycache__/
-/src/Exceptions/__pycache__/
+/src/Connections/__pycache__/
+/src/Logger/__pycache__/
+/configurations/__pycache
+
+#Excluding the logs
+/Logs
