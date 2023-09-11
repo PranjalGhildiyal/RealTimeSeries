@@ -50,11 +50,13 @@ pickleshare==0.7.5
 Pillow==10.0.0
 pip==23.2.1
 platformdirs==3.10.0
+plotly==5.16.1
 prompt-toolkit==3.0.39
 psutil==5.9.5
 pure-eval==0.2.2
 pyct==0.5.0
 Pygments==2.16.1
+PyMySQL==1.1.0
 pyparsing==3.0.9
 python-dateutil==2.8.2
 pytz==2023.3
@@ -67,6 +69,7 @@ setuptools==68.1.2
 six==1.16.0
 SQLAlchemy==1.4.32
 stack-data==0.6.2
+tenacity==8.2.3
 tornado==6.3.3
 tqdm==4.66.1
 traitlets==5.9.0
