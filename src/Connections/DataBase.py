@@ -16,8 +16,9 @@ class Connection:
         self.__connection_status= 'Disconnected'
         self.__import_status= False
         self.__engine= None
-        timezone= read_section['INFO']['timezone']
-        self.configs= read_section['SQLDB']
+        _, timezone= read_section('INFO')
+        timezone= timezone['timezone']
+        _, self.configs= read_section('SQLDB')
         self.connection_time= pd.to_datetime(pd.Timestamp.now(tz= timezone).strftime('%Y-%m-%d %H:%M:%S'))
         lg.info('Initiating Connection with Database.')
 
@@ -38,6 +39,15 @@ class Connection:
             lg.error("Execution failure")
             lg.exception("Exception: " + str(e))
             return self.__connection_status
+        
+    def get_schema(self, table_name:str):
+        query= '''SELECT COLUMN_NAME
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_NAME = '{}'
+                    ORDER BY ORDINAL_POSITION'''.format(table_name.value)
+        columns= pd.read_sql(query, self.__engine)
+        return list(columns['COLUMN_NAME'].values)
+
     
     def import_table(self, table_name:str, timestamp_column:str, value_column:str):
         query= 'select {},{} from {}.{}'.format(timestamp_column, value_column, self.configs['sql_database'], table_name)
