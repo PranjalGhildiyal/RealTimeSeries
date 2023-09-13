@@ -5,7 +5,8 @@
 /src/Components/__pycache__/
 /src/Connections/__pycache__/
 /src/Logger/__pycache__/
-/configurations/__pycache
+/configurations/__pycache__
+/configurations/config_file.ini
 
 #Excluding the logs
 /Logs
