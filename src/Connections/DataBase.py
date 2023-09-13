@@ -9,11 +9,11 @@ class Connection:
     def __init__(self):
         status, logging_location= read_section('LOCATIONS')
         if not status:
-            print('Could not finf section. {}'.format(logging_location))
+            print('Could not find section. {}'.format(logging_location))
             return None
         global lg
         lg= Applogger(logging_location['sqldb']).logger
-        self.__connection_status= 'Disconnected'
+        self.__connection_status= False
         self.__import_status= False
         self.__engine= None
         _, timezone= read_section('INFO')
@@ -32,7 +32,7 @@ class Connection:
                 sql_port = "3306"
             connect_query = "mysql+pymysql://"+sql_username+":"+sql_password+"@"+sql_ip+":"+sql_port+"/"+sql_database
             self.__engine = create_engine(connect_query)
-            self.__connection_status= 'Connected'
+            self.__connection_status= True
             lg.info("Execution success with engine: %s", self.__engine)
             return self.__connection_status
         except Exception as e:
@@ -41,16 +41,30 @@ class Connection:
             return self.__connection_status
         
     def get_schema(self, table_name:str):
-        query= '''SELECT COLUMN_NAME
-                    FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE TABLE_NAME = '{}'
-                    ORDER BY ORDINAL_POSITION'''.format(table_name.value)
-        columns= pd.read_sql(query, self.__engine)
-        return list(columns['COLUMN_NAME'].values)
+        status= False
+        try:
+            query= '''SELECT COLUMN_NAME
+                        FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_NAME = '{}'
+                        ORDER BY ORDINAL_POSITION'''.format(table_name)
+            lg.info('Executing query: {}'.format(query))
+            columns= pd.read_sql(query, self.__engine)
+            self.table_name= table_name
+            schema= list(columns['COLUMN_NAME'].values)
+            status= True
+            lg.info('Succcessfuly exported schema: {}'.format(schema))
+            return (status, schema)
+        
+        except Exception as e:
+            lg.error('Error while getting schema. Error message: '.format(e))
+            return (status, 'Error while getting schema. Error message: '.format(e))
+
+        
+        
 
     
-    def import_table(self, table_name:str, timestamp_column:str, value_column:str):
-        query= 'select {},{} from {}.{}'.format(timestamp_column, value_column, self.configs['sql_database'], table_name)
+    def import_data(self, timestamp_column:str, value_column:str):
+        query= 'select {},{} from {}.{}'.format(timestamp_column, value_column, self.configs['sql_database'], self.table_name)
         lg.info("Downloading data from database. Query:  %s, Engine: %s" , query,self.__engine)
         try:
             data = pd.read_sql(query,self.__engine)
