@@ -22,7 +22,7 @@ class Connection:
         self.connection_time= pd.to_datetime(pd.Timestamp.now(tz= timezone).strftime('%Y-%m-%d %H:%M:%S'))
         lg.info('Initiating Connection with Database.')
 
-    def connect(self, sql_username:str='', sql_password:str='', sql_ip:str='', sql_port:str='', sql_database:str='')->str:
+    def connect(self, sql_username:str='', sql_password:str='', sql_ip:str='', sql_port:str='', sql_database:str='')->bool:
         if any(val == '' for val in [sql_username, sql_password, sql_ip, sql_port, sql_database]):
             sql_username, sql_password, sql_ip, sql_port, sql_database= self.configs['sql_username'], self.configs['sql_password'], self.configs['sql_ip'], self.configs['sql_port'], self.configs['sql_database']
         
@@ -47,17 +47,17 @@ class Connection:
                         FROM INFORMATION_SCHEMA.COLUMNS
                         WHERE TABLE_NAME = '{}'
                         ORDER BY ORDINAL_POSITION'''.format(table_name)
+            self.table_name= table_name
             lg.info('Executing query: {}'.format(query))
             columns= pd.read_sql(query, self.__engine)
-            self.table_name= table_name
             schema= list(columns['COLUMN_NAME'].values)
             status= True
             lg.info('Succcessfuly exported schema: {}'.format(schema))
             return (status, schema)
         
         except Exception as e:
-            lg.error('Error while getting schema. Error message: '.format(e))
-            return (status, 'Error while getting schema. Error message: '.format(e))
+            lg.error('Error while getting schema. Error message: {}'.format(e))
+            return (status, 'Error while getting schema. Error message: {}'.format(e))
 
         
         
@@ -68,14 +68,14 @@ class Connection:
         lg.info("Downloading data from database. Query:  %s, Engine: %s" , query,self.__engine)
         try:
             data = pd.read_sql(query,self.__engine)
-            self.imported_data= data.rename(columns= {timestamp_column: 'DATETIME', value_column:'value'})
+            self.imported_data= data.rename(columns= {timestamp_column: 'DATETIME', value_column:'value'})[['DATETIME', 'value']]
             self.__import_status= True
             lg.info("Data imported from database successfully.")
-            return self.__import_status
+            return (self.__import_status, self.imported_data)
         except Exception as e:
             lg.error("Execution failure")
             lg.exception("Exception: " + str(e))
-            return self.__import_status
+            return (self.__import_status, "Exception: " + str(e))
 
     @property
     def connection_status(self):
