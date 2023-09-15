@@ -68,7 +68,7 @@ class Connection:
         lg.info("Downloading data from database. Query:  %s, Engine: %s" , query,self.__engine)
         try:
             data = pd.read_sql(query,self.__engine)
-            self.imported_data= data.rename(columns= {timestamp_column: 'DATETIME', value_column:'value'})[['DATETIME', 'value']]
+            self.imported_data= data.rename(columns= {timestamp_column: 'DATETIME', value_column:'value'})
             self.__import_status= True
             lg.info("Data imported from database successfully.")
             return (self.__import_status, self.imported_data)

@@ -67,11 +67,11 @@ class Connection:
             return (status, f'Error downloading data: {str(e)}')
 
 
-    def import_data(self):
+    def import_data(self, timestamp_column, value_column):
         status= False
         if self.data is not None:
             status= True
-            return (status, self.data)
+            return (status, self.data.rename(columns={timestamp_column: 'DATETIME', value_column: 'value'})[['DATETIME', 'value']])
         else:
             lg.error('No data available to convert to DataFrame.')
             return (status, 'No data available to convert to DataFrame.')

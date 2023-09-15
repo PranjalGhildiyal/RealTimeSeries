@@ -42,13 +42,16 @@ class Connection:
             return (status, list(data.values))
 
     
-    def import_data(self):
+    def import_data(self, timestamp_column, value_column):
         status= False
         if self.format == 'xlsx':
-            data= pd.read_excel(self.file, sheet_name=self.sheet_name)
+            if self.sheet_name:
+                data= pd.read_excel(self.file, sheet_name=self.sheet_name, usecols = [timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column:  'value'})
+            else:
+                data= pd.read_excel(self.file, usecols = [timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column:  'value'})
             status= True
             return (status, data)
         elif self.format == 'csv':
-            data= pd.read_csv(self.file, sep= self.separator)
+            data= pd.read_csv(self.file, sep= self.separator, usecols = timestamp_column + ',' + value_column).rename(columns={timestamp_column: 'DATETIME', value_column: 'value'})
             status= True
             return (status, data)
