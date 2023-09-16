@@ -8,7 +8,6 @@ class Applogger():
         self.timezone = timezone
         self.login = pd.to_datetime(pd.Timestamp.now(tz= timezone).strftime('%Y-%m-%d %H:%M:%S'))
         self.log_file_location= log_file_location
-        print(self.log_file_location)
 
     @property
     def logger(self):
@@ -25,3 +24,8 @@ class Applogger():
         # Add the file handler to the logger
         self._logger.addHandler(file_handler)
         return self._logger
+    
+    def shutdown(self):
+        self._logger.warning('Deleting logger instance. \n')
+        lg.shutdown()
+        self._logger.handlers.clear()
