@@ -9,6 +9,7 @@ import asyncio
 class Connection:
     def __init__(self):
         status, logging_location= read_section('LOCATIONS')
+        self.data= pd.DataFrame()
         if not status:
             print('Could not find section. {}'.format(logging_location))
             return None
@@ -24,22 +25,21 @@ class Connection:
 
         lg.info('Initiating Connection with Kafka.')
 
-    def connect(self, topic):
-        print(self.configs)
+    def connect(self, broker, topic):
+
         try:
             self.consumer = KafkaConsumer(
                 topic,
-                bootstrap_servers=[self.configs['bootstrap_servers']],
+                bootstrap_servers=[broker],
                 value_deserializer=Connection.deserializer
             )
-            print('Done')
             lg.info(f'Connected to Kafka topic: {topic}')
             self.topic= topic
             self.__connection_status = 'Connected'
         except Exception as e:
             lg.error(f'Failed to connect to Kafka: {str(e)}')
 
-    async def consume_and_update_plots(self, update_callback=None):
+    def consume_and_update_plots(self, update_callback=None):
         if self.__connection_status == 'Connected':
             try:
                 for message in self.consumer:
@@ -48,7 +48,7 @@ class Connection:
                     
                     # Call the update_callback function with self.values as input
                     if update_callback:
-                        await update_callback(mframe)
+                        update_callback(mframe)
             except Exception as e:
                 lg.error(f'Error while consuming messages: {str(e)}')
         else:
@@ -63,6 +63,9 @@ class Connection:
         else:
             lg.warning('Not connected to Kafka.')
 
+    async def update(self, mframe):
+        self.data = pd.concat([self.data, mframe], ignore_index=True)
+
 
     @staticmethod
     def deserializer(value):
@@ -75,4 +78,17 @@ class Connection:
                 'Connection Status': self.__connection_status,
                 'Import Status': self.__import_status
                 }
+    
+    def poll_messages(self, callback):
+        while True:
+            msg = self.consumer.poll(4)
+            if msg is None:
+                continue
+            if msg.error():
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    continue
+                else:
+                    print(msg.error())
+                    break
+            callback(msg)
 
