@@ -12,7 +12,9 @@ class Connection:
             print('Could not find section. {}'.format(logging_location))
             return None
         global lg
-        lg= Applogger(logging_location['sqldb']).logger
+        global logger
+        logger= Applogger(logging_location['sqldb'])
+        lg= logger.logger
         self.__connection_status= False
         self.__import_status= False
         self.__engine= None
@@ -93,6 +95,9 @@ class Connection:
 
         self.connect()
         return self.__connection_status
+    
+    def shutdown():
+        logger.shutdown()
 
 
     def __str__(self):
