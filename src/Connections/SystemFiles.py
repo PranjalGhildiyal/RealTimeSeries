@@ -11,7 +11,10 @@ class Connection:
             print('Could not find section. {}'.format(logging_location))
             return None
         global lg
-        lg= Applogger(logging_location['filesystem']).logger
+        global logger
+        logger= Applogger(logging_location['filesystem'])
+        lg= logger.logger
+        lg.info('Initiated File Import.')
 
     def connect(self, path, format, sheet_name, separator):
         '''
@@ -21,10 +24,11 @@ class Connection:
         self.sheet_name= sheet_name
         self.separator= separator
         self.format= format
-
         try:
             self.file= BytesIO(path)
+            print(self.file)
             status= True
+            lg.info('Connected to file path!')
             return status
         except Exception as e:
             lg.error(f'Error while connecting to filesystem. Error message: {str(e)}')
@@ -34,10 +38,14 @@ class Connection:
         status= False
         if self.format == 'xlsx':
             data= pd.read_excel(self.file, nrows=1, header= None).loc[0]
+            lg.info('Schema imported successfully!')
             status= True
             return (status, list(data.values))
         elif self.format == 'csv':
             data= pd.read_csv(self.file, nrows=1, header= None).loc[0]
+            # Resetting the bytes object cursor to 0th position
+            self.file.seek(0)
+            lg.info('Schema imported successfully!')
             status= True
             return (status, list(data.values))
 
@@ -45,13 +53,26 @@ class Connection:
     def import_data(self, timestamp_column, value_column):
         status= False
         if self.format == 'xlsx':
-            if self.sheet_name:
-                data= pd.read_excel(self.file, sheet_name=self.sheet_name, usecols = [timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column:  'value'})
+            if self.sheet_name is not None:
+                data= pd.read_excel(self.file, sheet_name=self.sheet_name, usecols=[timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column:  'value'})
             else:
-                data= pd.read_excel(self.file, usecols = [timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column:  'value'})
+                data = pd.read_excel(self.file, usecols=[timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column:  'value'})
             status= True
+            lg.info('Data imported successfully!')
             return (status, data)
         elif self.format == 'csv':
-            data= pd.read_csv(self.file, sep= self.separator, usecols = timestamp_column + ',' + value_column).rename(columns={timestamp_column: 'DATETIME', value_column: 'value'})
+            self.file.seek(0)
+            if self.separator is not None:
+                data= pd.read_csv(self.file, sep= self.separator, usecols=[timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column: 'value'})
+            else:
+                data= pd.read_csv(self.file, usecols=[timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column: 'value'})
             status= True
+            lg.info('Data imported successfully!')
             return (status, data)
+        
+    def shutdown(self):
+        logger.shutdown()
+
+    @property
+    def bytes_obj(self):
+        return self.file

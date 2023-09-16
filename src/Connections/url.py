@@ -14,7 +14,9 @@ class Connection:
             print('Could not find section. {}'.format(logging_location))
             return None
         global lg
-        lg= Applogger(logging_location['url']).logger
+        global logger
+        logger= Applogger(logging_location['url'])
+        lg= logger.logger
         self.__import_status = False
         self.data= None
 
@@ -75,3 +77,6 @@ class Connection:
         else:
             lg.error('No data available to convert to DataFrame.')
             return (status, 'No data available to convert to DataFrame.')
+        
+    def shutdown(self):
+        logger.shutdowm()
