@@ -9,6 +9,7 @@ try:
     from pmdarima import model_selection
     from pmdarima import pipeline
     from pmdarima import preprocessing
+    import asyncio
 except ImportError as e:
     print('Could not import module: {}.'.format(e))
 
@@ -90,14 +91,14 @@ class ConnectionWidgets(WidgetDefinitions):
         # -----------------ApacheKafka------------------------
 
         # Step 3.1
-        self.bootstrap_servers= pn.widgets.TextInput(name= 'bootstrap_servers', placeholder=str([self.kafka_configs['bootstrap_servers']]), sizing_mode= 'stretch_width')
-        self.topics= pn.widgets.TextInput(name='Enter topic name', sizing_mode= 'stretch_width')
+        self.kafka_broker= pn.widgets.TextInput(name= 'bootstrap_servers', placeholder=str([self.kafka_configs['bootstrap_servers']]), sizing_mode= 'stretch_width')
+        self.kafka_topic= pn.widgets.TextInput(name='Enter topic name', sizing_mode= 'stretch_width')
         self.kafka_go= pn.widgets.Button(name= 'GO!', button_type='primary', sizing_mode= 'stretch_width')
-        kafka_bunch= pn.Column(self.bootstrap_servers, self.topics, self.kafka_go, sizing_mode= 'stretch_width')
-        
-        # Step 3.2:
+        self.kafka_stop=pn.widgets.Toggle(name='Stop Kafka', balue=False)
+        kafka_bunch= pn.Column(self.kafka_broker, self.kafka_topic, self.kafka_go, sizing_mode= 'stretch_width')
 
-        # Step 3.3:
+        self.kafka_go.on_click(lambda event: self.run_kafka())
+        self.kafka_stop.param.watch(lambda event: self.__change_button_color(self.kafka_stop), 'value')
 
 
 
@@ -177,6 +178,26 @@ class ConnectionWidgets(WidgetDefinitions):
     # =======================================================================================================================================================
     #                                                            Now defining watcher functions
     # =======================================================================================================================================================
+
+
+    def __change_button_color(widget):
+        widget.button_type= 'danger'
+
+
+    def run_kafka(self):
+        connection = Kafka.Connection()
+        connection.connect(self.kafka_broker.value, self.kafka_topic.value)
+
+        self.data = pd.DataFrame()  # Initialize an empty DataFrame for data
+
+        def update(mframe):
+            self.data = pd.concat([self.data, mframe], ignore_index=True)
+            self.update_dashboard()
+
+
+        while not self.kafka_stop.value:
+            connection.consume_and_update_plots(update_callback=update)
+
 
     def __init_connection(self, button, connection, params):
         button.button_type= 'success'
@@ -303,3 +324,7 @@ class ConnectionWidgets(WidgetDefinitions):
     def __adjust_format(self, event):
         format__= event.new.split('.')[-1]
         self.format.value= format__
+
+
+    def update_dashboard(self):
+        print('Updating Dashboard now! New row={}'.format(self.data.loc[max(self.data.index)]))
