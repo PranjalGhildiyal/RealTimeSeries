@@ -6,6 +6,8 @@
 /src/Connections/__pycache__/
 /src/Logger/__pycache__/
 /configurations/__pycache__/
+
+# Excluding current config_file.ini
 /configurations/config_file.ini
 
 #Excluding the logs
