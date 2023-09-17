@@ -32,12 +32,12 @@ class ConnectionWidgets(WidgetDefinitions):
                               -get_schema(*get_schema_parameters): Returns a tuple containing: 
                                                                                               1. `status`(bool) 
                                                                                               2. `column_names`(list)
-                              -import_data_parameters(*import_data_parameters): Returns a tuple, containing:
+                              -import_data(*import_data_parameters): Returns a tuple, containing:
                                                                                               1. `status`(bool) 
                                                                                               2. `data`(pd.DataFrame)
               - Dont forget to wrap all the relevant widgets in a widget bunch, which will be used later.
                   
-        Step 3.2: Define input parameter list for each Step of the connector. The input parameters are holoviz panel widgets with the `value` attribute as parameters.
+        Step 3.2: Define input parameter list for each Step of the connector. The input parameters are holoviz panel widgets with the `value` attribute as parameters OR any other entity not having a `value` attribute.
 
         Step 3.3: Add watcher function in the syntax:
              self.your_custom_import_button_widget.on_click(lambda event: self.__combined_connector(Method.Connection, init_param_list, connect_param_list, get_schema_param_list, import_data_param_list, self.your_custom_import_button_widget))
@@ -97,9 +97,17 @@ class ConnectionWidgets(WidgetDefinitions):
         self.kafka_stop=pn.widgets.Toggle(name='Stop Kafka', balue=False)
         kafka_bunch= pn.Column(self.kafka_broker, self.kafka_topic, self.kafka_go, sizing_mode= 'stretch_width')
 
-        self.kafka_go.on_click(lambda event: self.run_kafka())
+        
         self.kafka_stop.param.watch(lambda event: self.__change_button_color(self.kafka_stop), 'value')
 
+        # Step 3.2:
+        kafka_init_connection_parameters= []
+        kafka_connect_parameters = [self.kafka_broker, self.kafka_topic]
+        kafka_get_schema_parameters = []
+        kafka_import_data_parameters = [self.datetime_column_selector, self.value_selector, self.catch_value]
+
+        # Step 3.3:
+        self.kafka_go.on_click(lambda event: self.__combined_connector(Kafka.Connection, kafka_init_connection_parameters, kafka_connect_parameters, kafka_get_schema_parameters, kafka_import_data_parameters, self.kafka_go))
 
 
         # -----------------URL------------------------
@@ -146,6 +154,10 @@ class ConnectionWidgets(WidgetDefinitions):
                                 ('Apache Kafka', kafka_bunch),
                                 ('URL', url_bunch),
                                 ('System Files', filesystem_bunch),
+                                #=============ADD HERE:================
+
+
+                                #======================================
                                 sizing_mode= 'stretch_width'
                                 )
         
@@ -183,20 +195,11 @@ class ConnectionWidgets(WidgetDefinitions):
     def __change_button_color(widget):
         widget.button_type= 'danger'
 
-
-    def run_kafka(self):
-        connection = Kafka.Connection()
-        connection.connect(self.kafka_broker.value, self.kafka_topic.value)
-
-        self.data = pd.DataFrame()  # Initialize an empty DataFrame for data
-
-        def update(mframe):
-            self.data = pd.concat([self.data, mframe], ignore_index=True)
-            self.update_dashboard()
-
-
-        while not self.kafka_stop.value:
-            connection.consume_and_update_plots(update_callback=update)
+    def catch_value(self, mframe):
+        if self.data is None:
+            self.data= pd.DataFrame()
+        self.data= pd.concat([self.data, mframe], ignore_index=True)
+        self.update_dashboard()
 
 
     def __init_connection(self, button, connection, params):
@@ -225,6 +228,7 @@ class ConnectionWidgets(WidgetDefinitions):
         print(schema)
         self.datetime_column_selector.options= schema
         self.value_selector.options= schema
+        
         start_importing= pn.widgets.Button(name= 'GO', button_type= 'primary')
         start_importing.on_click(lambda event: self.__begin_showcase(import_data_params))
         self.template.modal[0].append(pn.Column(pn.Row(self.datetime_column_selector, self.value_selector), start_importing))
@@ -256,7 +260,9 @@ class ConnectionWidgets(WidgetDefinitions):
             return
         
     def __begin_showcase(self, import_data_params):
-        status, self.data= self.connection.import_data(*[param.value for param in import_data_params])
+        print(import_data_params)
+        print([param.value if hasattr(param, 'value') else param for param in import_data_params])
+        status, self.data= self.connection.import_data(*[param.value if hasattr(param, 'value') else param for param in import_data_params])
         if status:
             self.template.modal[0].append(pn.pane.Alert('Successfully Imported Data!', alert_type='success'))
             self.connection.shutdown()
@@ -299,7 +305,7 @@ class ConnectionWidgets(WidgetDefinitions):
 
         X= self.data[['DATETIME']]
         y=self.data['value']
-        y_train, y_test, X_train, X_test = model_selection.train_test_split(y, X, test_size=self.feature_shape.value)
+        y_train, y_test, X_train, X_test = model_selection.train_test_split(y, X, train_size=self.training_shape.value)
         date_feat = preprocessing.DateFeaturizer(
                                                     column_name="DATETIME", 
                                                     with_day_of_week=True,
