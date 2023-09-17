@@ -3,7 +3,6 @@ import json
 import pandas as pd
 from RealTimeSeries.src.Logger.AppLogger import Applogger
 from RealTimeSeries.configurations.index import read_section
-import asyncio
 
 
 class Connection:
@@ -15,7 +14,7 @@ class Connection:
             return None
         global lg
         lg= Applogger(logging_location['kafka']).logger
-        self.__connection_status = 'Disconnected'
+        self.__connection_status = False
         self.__import_status = False
         status, self.configs = read_section('KAFKA')
         if not status:
@@ -35,41 +34,82 @@ class Connection:
             )
             lg.info(f'Connected to Kafka topic: {topic}')
             self.topic= topic
-            self.__connection_status = 'Connected'
+            self.__connection_status = True
+            return self.__connection_status
+        
         except Exception as e:
             lg.error(f'Failed to connect to Kafka: {str(e)}')
+            return self.__connection_status
 
-    def consume_and_update_plots(self, update_callback=None):
-        if self.__connection_status == 'Connected':
+    def get_schema(self):
+        status= False
+        if self.__connection_status:
+            try:
+                for message in self.consumer:
+                    status= True
+                    all_keys= Connection.flatten_nested_dictionary_keys(message.value)
+                    return (status, all_keys)
+            except Exception as e:
+                lg.error('Error while trying to get schema!')
+                status= False
+                return (status, 'Error while trying to get schema!')
+        else:
+            lg.error('No Connections found!')
+            return (status, 'No Connections found!')
+
+
+    def import_data(self, datetime_column, value_column, update_callback):
+        if self.__connection_status == True:
             try:
                 for message in self.consumer:
                     self.__import_status= True
-                    mframe = pd.DataFrame(message.value, index=[0])
-                    
-                    # Call the update_callback function with self.values as input
-                    if update_callback:
-                        update_callback(mframe)
+                    req= dict(message.value)
+                    req= Connection.flatten_nested_dictionary(message.value)
+                    mframe = pd.DataFrame(req, index=[0])[[datetime_column, value_column]].rename(columns={datetime_column: 'DATETIME', value_column: 'value'})
+
+                    update_callback(mframe)
             except Exception as e:
                 lg.error(f'Error while consuming messages: {str(e)}')
         else:
             lg.warning('Not connected to Kafka. Call connect() first.')
 
     def disconnect(self):
-        if self.__connection_status == 'Connected':
+        if self.__connection_status:
             self.consumer.close()
             lg.info('Disconnected from Kafka.')
-            self.__connection_status = 'Disconnected'
+            self.__connection_status = False
             self.__import_status= False
         else:
             lg.warning('Not connected to Kafka.')
-
-    async def update(self, mframe):
-        self.data = pd.concat([self.data, mframe], ignore_index=True)
 
 
     @staticmethod
     def deserializer(value):
         return json.loads(value.decode('utf-8'))
+    
+    @staticmethod
+    def flatten_nested_dictionary(nested_dict, separator='.'):
+        flat_dict = {}
+        for key, value in nested_dict.items():
+            if isinstance(value, dict):
+                flat_subdict = Connection.flatten_nested_dictionary(value, separator=separator)
+                for subkey, subvalue in flat_subdict.items():
+                    flat_dict[f"{key}{separator}{subkey}"] = subvalue
+            else:
+                flat_dict[key] = value
+        return flat_dict
+    
+    @staticmethod
+    def flatten_nested_dictionary_keys(nested_dict, separator='.'):
+        flat_dict = {}
+        for key, value in nested_dict.items():
+            if isinstance(value, dict):
+                flat_subdict = Connection.flatten_nested_dictionary(value, separator=separator)
+                for subkey, subvalue in flat_subdict.items():
+                    flat_dict[f"{key}{separator}{subkey}"] = subvalue
+            else:
+                flat_dict[key] = value
+        return list(flat_dict.keys())
     
     def __str__(self):
         return {
@@ -78,17 +118,4 @@ class Connection:
                 'Connection Status': self.__connection_status,
                 'Import Status': self.__import_status
                 }
-    
-    def poll_messages(self, callback):
-        while True:
-            msg = self.consumer.poll(4)
-            if msg is None:
-                continue
-            if msg.error():
-                if msg.error().code() == KafkaError._PARTITION_EOF:
-                    continue
-                else:
-                    print(msg.error())
-                    break
-            callback(msg)
 
