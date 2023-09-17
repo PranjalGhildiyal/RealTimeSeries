@@ -34,3 +34,6 @@ class WidgetDefinitions(ConfigReader):
         self.gauge= pn.indicators.Gauge(name='Failure Rate', value=10, format= '{value}')
         self.bars= pn.pane.Plotly()
         self.pie_chart= pn.pane.Plotly()
+
+        # Defining data for the first time
+        self.data= None
