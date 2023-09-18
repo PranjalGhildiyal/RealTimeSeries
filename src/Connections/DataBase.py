@@ -61,10 +61,6 @@ class Connection:
             lg.error('Error while getting schema. Error message: {}'.format(e))
             return (status, 'Error while getting schema. Error message: {}'.format(e))
 
-        
-        
-
-    
     def import_data(self, timestamp_column:str, value_column:str):
         query= 'select {},{} from {}.{}'.format(timestamp_column, value_column, self.configs['sql_database'], self.table_name)
         lg.info("Downloading data from database. Query:  %s, Engine: %s" , query,self.__engine)
@@ -98,7 +94,6 @@ class Connection:
     
     def shutdown():
         logger.shutdown()
-
 
     def __str__(self):
         return {'Connection:': self.__connection_status,

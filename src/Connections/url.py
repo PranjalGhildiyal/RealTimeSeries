@@ -38,7 +38,6 @@ class Connection:
 
         return self.__connection_status
         
-
     def get_schema(self):
         status= False
         try:
@@ -68,7 +67,6 @@ class Connection:
             lg.error(f'Error downloading data: {str(e)}')
             return (status, f'Error downloading data: {str(e)}')
 
-
     def import_data(self, timestamp_column, value_column):
         status= False
         if self.data is not None:
@@ -77,6 +75,6 @@ class Connection:
         else:
             lg.error('No data available to convert to DataFrame.')
             return (status, 'No data available to convert to DataFrame.')
-        
+
     def shutdown(self):
         logger.shutdowm()

@@ -57,7 +57,6 @@ class Connection:
             lg.error('No Connections found!')
             return (status, 'No Connections found!')
 
-
     def import_data(self, datetime_column, value_column, update_callback):
         if self.__connection_status == True:
             try:
