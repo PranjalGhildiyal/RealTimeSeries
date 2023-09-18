@@ -36,6 +36,5 @@ class WidgetDefinitions(ConfigReader):
         self.pie_chart= pn.pane.Plotly()
         self.main_chart= pn.pane.Plotly()
         
-
         # Defining data for the first time
         self.data= None

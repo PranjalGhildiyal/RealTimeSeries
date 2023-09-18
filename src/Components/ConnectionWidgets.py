@@ -10,8 +10,8 @@ try:
     from pmdarima import pipeline
     from pmdarima import preprocessing
     import asyncio
-except ImportError as e:
-    print('Could not import module: {}.'.format(e))
+except ImportError as import_error:
+    print(f'Could not import module: {import_error}.')
 
 #===========================================================
 #                         Step 3
@@ -21,7 +21,8 @@ except ImportError as e:
 class ConnectionWidgets(WidgetDefinitions):
     def __init__(self):
         '''
-        ----------------------------------------------------------------------------SYNTAX---------------------------------------------------------------------------------------------------------
+        SYNTAX
+        ======
 
         Step 3.1: Define buttons for input to a connector.
                - Structure of the connector:
@@ -49,9 +50,6 @@ class ConnectionWidgets(WidgetDefinitions):
         # -------------------------------------------------------------------------------------------------------------------------------------------------
         #                                                            CHANGE FROM HERE
         # -------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
 
         # -----------------database------------------------
         # Step 3.1
@@ -86,19 +84,12 @@ class ConnectionWidgets(WidgetDefinitions):
         # Step 3.3:
         self.db_go.on_click(lambda event: self.__combined_connector(DataBase.Connection, db_init_connection_parameters, db_connect_parameters, db_get_schema_parameters, db_import_data_parameters, self.db_go))
 
-        
-
         # -----------------ApacheKafka------------------------
-
         # Step 3.1
         self.kafka_broker= pn.widgets.TextInput(name= 'bootstrap_servers', placeholder=str([self.kafka_configs['bootstrap_servers']]), sizing_mode= 'stretch_width')
         self.kafka_topic= pn.widgets.TextInput(name='Enter topic name', sizing_mode= 'stretch_width')
         self.kafka_go= pn.widgets.Button(name= 'GO!', button_type='primary', sizing_mode= 'stretch_width')
-        self.kafka_stop=pn.widgets.Toggle(name='Stop Kafka', balue=False)
         kafka_bunch= pn.Column(self.kafka_broker, self.kafka_topic, self.kafka_go, sizing_mode= 'stretch_width')
-
-        
-        self.kafka_stop.param.watch(lambda event: self.__change_button_color(self.kafka_stop), 'value')
 
         # Step 3.2:
         kafka_init_connection_parameters= []
@@ -108,7 +99,6 @@ class ConnectionWidgets(WidgetDefinitions):
 
         # Step 3.3:
         self.kafka_go.on_click(lambda event: self.__combined_connector(Kafka.Connection, kafka_init_connection_parameters, kafka_connect_parameters, kafka_get_schema_parameters, kafka_import_data_parameters, self.kafka_go))
-
 
         # -----------------URL------------------------
         # Step 3.1:
@@ -124,8 +114,6 @@ class ConnectionWidgets(WidgetDefinitions):
 
         # Step 3.3:
         self.url_go.on_click(lambda event: self.__combined_connector(url.Connection, url_init_connection_parameters, url_connect_parameters, url_get_schema_parameters, url_import_data_parameters, self.url_go))
-
-
 
         # #--------------FileSystem----------------------------
         # Step 3.1:
@@ -165,27 +153,18 @@ class ConnectionWidgets(WidgetDefinitions):
         #                                                            CHANGE TILL HERE
         # -------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-
         # Making a clear button
         self.clear= pn.widgets.Button(name= 'CLEAR', button_type='danger', sizing_mode= 'stretch_width')
+
+        # Making a STOP button
+        self.stop=pn.widgets.Button(name='STOP', button_type='danger', sizing_mode='stretch_width')
 
         # Now finally making a sidebar
         self.sidebar= pn.Column(
                                     self.config_widgetbox,
                                     accordion,
-                                    self.clear
+                                    pn.Row(self.stop, self.clear)
                                 )
-        
-        
-        
-
-
-
-
-
-
-
 
     # =======================================================================================================================================================
     #                                                            Now defining watcher functions
@@ -201,7 +180,6 @@ class ConnectionWidgets(WidgetDefinitions):
             self.data= pd.DataFrame()
         self.data= pd.concat([self.data, mframe], ignore_index=True)
         self.update_dashboard()
-
 
     def __init_connection(self, button, connection, params):
         button.button_type= 'success'
@@ -234,7 +212,6 @@ class ConnectionWidgets(WidgetDefinitions):
         start_importing.on_click(lambda event: self.__begin_showcase(import_data_params))
         self.template.modal[0].append(pn.Column(pn.Row(self.datetime_column_selector, self.value_selector), start_importing))
         
-    
     def __combined_connector(self, connection, init_params, connect_params, get_schema_params, import_data_params, button):
 
         self.__init_connection(button, connection, init_params)
@@ -287,7 +264,7 @@ class ConnectionWidgets(WidgetDefinitions):
         try:
             self.data['DATETIME'] = pd.to_datetime(self.data['DATETIME'])
             
-        except Exception as e:
+        except Exception:
             modelling_update= pn.pane.Alert('DATETIME COLUMN FORMAT ERROR.', alert_type='danger')
             self.modelling_status.value= False
             self.template.modal[0].pop(-1)
@@ -327,11 +304,9 @@ class ConnectionWidgets(WidgetDefinitions):
         self.modelling_status.value= False
         self.template.modal[0].append(pn.Row(self.modelling_status, modelling_update))
 
-
     def __adjust_format(self, event):
         format__= event.new.split('.')[-1]
         self.format.value= format__
-
 
     def update_dashboard(self):
         print('Updating Dashboard now! New row={}'.format(self.data.loc[max(self.data.index)]))

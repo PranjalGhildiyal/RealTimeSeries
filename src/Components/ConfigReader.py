@@ -5,7 +5,6 @@ from RealTimeSeries.configurations.index import read_section
 #============================================================
 # Read all configs here.
 
-
 class ConfigReader:
     def __init__(self):
         print('in ConfigReader')
