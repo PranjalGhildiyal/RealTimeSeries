@@ -31,9 +31,11 @@ class WidgetDefinitions(ConfigReader):
         self.config_widgetbox= pn.WidgetBox(pn.Column(pn.Row(self.last_n, self.last_unit), pn.Row(self.feature_shape, self.n_indexes), self.training_shape), sizing_mode= 'stretch_width')
 
         # Making main
-        self.gauge= pn.indicators.Gauge(name='Failure Rate', value=10, format= '{value}')
+        self.gauge= pn.indicators.Gauge(name='Failure Rate', value=0, format= '{value}')
         self.bars= pn.pane.Plotly()
         self.pie_chart= pn.pane.Plotly()
+        self.main_chart= pn.pane.Plotly()
+        
 
         # Defining data for the first time
         self.data= None
