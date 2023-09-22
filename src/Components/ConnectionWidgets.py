@@ -80,7 +80,7 @@ class ConnectionWidgets(WidgetDefinitions):
             self.sql_database
             ]
         db_get_schema_parameters= [self.sql_db_tablename]
-        db_import_data_parameters= [self.datetime_column_selector, self.value_selector]
+        db_import_data_parameters= [self.datetime_column_selector, self.value_selector, self.catch_value]
 
         # Step 3.3:
         self.db_go.on_click(lambda event: self.__combined_connector(DataBase.Connection, db_init_connection_parameters, db_connect_parameters, db_get_schema_parameters, db_import_data_parameters, self.db_go))
@@ -111,7 +111,7 @@ class ConnectionWidgets(WidgetDefinitions):
         url_init_connection_parameters= [self.url_input]
         url_connect_parameters = []
         url_get_schema_parameters = []
-        url_import_data_parameters = [self.datetime_column_selector, self.value_selector]
+        url_import_data_parameters = [self.datetime_column_selector, self.value_selector, self.catch_value]
 
         # Step 3.3:
         self.url_go.on_click(lambda event: self.__combined_connector(url.Connection, url_init_connection_parameters, url_connect_parameters, url_get_schema_parameters, url_import_data_parameters, self.url_go))
@@ -130,7 +130,7 @@ class ConnectionWidgets(WidgetDefinitions):
         filesystem_init_connection_parameters= []
         filesystem_connect_parameters = [self.file_input, self.format, self.sheet_name, self.separator]
         filesystem_get_schema_parameters = []
-        filesystem_import_data_parameters = [self.datetime_column_selector, self.value_selector]
+        filesystem_import_data_parameters = [self.datetime_column_selector, self.value_selector, self.catch_value]
 
         # Step 3.3:
         self.filesystem_go.on_click(lambda event: self.__combined_connector(SystemFiles.Connection, filesystem_init_connection_parameters, filesystem_connect_parameters, filesystem_get_schema_parameters, filesystem_import_data_parameters, self.filesystem_go))
@@ -159,6 +159,7 @@ class ConnectionWidgets(WidgetDefinitions):
 
         # Making a STOP button
         self.stop=pn.widgets.Button(name='STOP', button_type='danger', sizing_mode='stretch_width')
+        self.stop.on_click(self.__startstop)
 
         # Now finally making a sidebar
         self.sidebar= pn.Column(
@@ -172,6 +173,13 @@ class ConnectionWidgets(WidgetDefinitions):
     #                                                         Add your own watcher functions here
     # =======================================================================================================================================================
 
+    def __startstop(self, event=None):
+        if self.stop.clicks%2 ==0:
+            self.stop.name='Play!'
+            self.stop.button_type='success'
+        else:
+            self.stop.name='STOP'
+            self.stop.button_type='danger'
 
     def __change_button_color(widget):
         widget.button_type= 'danger'
@@ -180,7 +188,14 @@ class ConnectionWidgets(WidgetDefinitions):
         if self.data is None:
             self.data= pd.DataFrame()
         self.data= pd.concat([self.data, mframe], ignore_index=True)
-        self.update_dashboard()
+        self.gauge_callback()
+        self.dfstream.send(mframe)
+        if self.stop.clicks%2==1:
+            while True:
+                if self.stop.clicks%2==0:
+                    break
+
+        # self.update_dashboard()
 
     def __init_connection(self, button, connection, params):
         button.button_type= 'success'
@@ -309,22 +324,52 @@ class ConnectionWidgets(WidgetDefinitions):
         format__= event.new.split('.')[-1]
         self.format.value= format__
 
-    def update_dashboard(self):
-        print('Updating Dashboard now! New row={}'.format(self.data.loc[max(self.data.index)]))
+    # def update_dashboard(self):
+    #     print('Updating Dashboard now! New row={}'.format(self.data.loc[max(self.data.index)]))
 
     def hist_callback(self, data):
         # Convert 'DATETIME' column to datetime type
         data['DATETIME'] = pd.to_datetime(data['DATETIME'])
+
+        if data['DATETIME'].isna().any():
+            return hv.Bars()
+    
+        if len(data) == 0:
+            return hv.Bars()
         
         # Get the latest timestamp
         latest_timestamp = data['DATETIME'].max()
-        latest_date= latest_timestamp.date()
+        if self.last_unit.value=='years':
+            latest_date= latest_timestamp.year
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=365 * self.last_n.values))]
+            last_data['DATE']= last_data['DATETIME'].dt.year
         
-        # Calculate the mean of the last 20 days' values
-        last_20_days_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=3))]
-        last_20_days_data['DATE'] = last_20_days_data['DATETIME'].dt.day
-        mean_value = last_20_days_data.groupby('DATE')['value'].mean().reset_index()
+        elif self.last_unit.value=='months':
+            latest_date= latest_timestamp.month
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=30 * self.last_n.values))]
+            last_data['DATE']= last_data['DATETIME'].dt.month
         
+        elif self.last_unit.value=='days':
+            latest_date= latest_timestamp.day
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=self.last_n.values))]
+            last_data['DATE']= last_data['DATETIME'].dt.day
+        
+        elif self.last_unit.value=='hours':
+            latest_date= latest_timestamp.hour
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(hours=self.last_n.values))]
+            last_data['DATE']= last_data['DATETIME'].dt.hour
+        
+        elif self.last_unit.value=='minutes':
+            latest_date= latest_timestamp.minutes
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(minutes=self.last_n.values))]
+            last_data['DATE']= last_data['DATETIME'].dt.minutes
+
+        elif self.last_unit.value=='seconds':
+            latest_date= latest_timestamp.seconds
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(seconds=self.last_n.values))]
+            last_data['DATE']= last_data['DATETIME'].dt.seconds
+        
+        mean_value = last_data.groupby('DATE')['value'].mean().reset_index()
         # Create a Curve element to display the mean values
         curve = hv.Bars(mean_value, kdims=['DATE'], vdims=['value'])
         
@@ -332,8 +377,15 @@ class ConnectionWidgets(WidgetDefinitions):
     
 
 
-    def gauge_callback(self, data):
-        return hv.Bars(data, kdims=['DATETIME'], vdims='value')
+    def gauge_callback(self):
+        max_= self.data['value'].max()
+        min_= self.data['value'].min()
+        if max_ == min_:
+            max_ += 100
+            min_ -= 100
+        value= self.data.tail(1)['value'].values[0]
+        self.gauge.bounds= (min_, max_)
+        self.gauge.value= value
 
     
     def gradient_pie(self, data):
