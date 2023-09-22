@@ -61,9 +61,9 @@ class Connection:
             status= True
             lg.info('Data imported successfully!')
             for i in data.index:
-                callback(data.loc[i])
-                time.sleep(1)
-            return (status, data)
+                status= callback(pd.DataFrame(data.loc[i]).T)
+                if not status:
+                    return status
         
         elif self.format == 'csv':
             self.file.seek(0)
@@ -74,9 +74,9 @@ class Connection:
             status= True
             lg.info('Data imported successfully!')
             for i in data.index:
-                callback(pd.DataFrame(data.loc[i]).T)
-                time.sleep(1)
-            return (status, data)
+                status= callback(pd.DataFrame(data.loc[i]).T)
+                if not status:
+                    return status
         
     def shutdown(self):
         logger.shutdown()

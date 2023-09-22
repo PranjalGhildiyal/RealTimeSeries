@@ -158,8 +158,11 @@ class ConnectionWidgets(WidgetDefinitions):
         self.clear= pn.widgets.Button(name= 'CLEAR', button_type='danger', sizing_mode= 'stretch_width')
 
         # Making a STOP button
-        self.stop=pn.widgets.Button(name='STOP', button_type='danger', sizing_mode='stretch_width')
-        self.stop.on_click(self.__startstop)
+        self.stop=pn.widgets.Toggle(name='STOP', button_type='danger', sizing_mode='stretch_width', value=False)
+
+        # Making a pause button
+        self.playpause= pn.widgets.Button(name='Pause', button_type= 'warning', sizing_mode='stretch_width')
+        self.playpause.on_click(self.__playpause)
 
         # Now finally making a sidebar
         self.sidebar= pn.Column(
@@ -173,13 +176,16 @@ class ConnectionWidgets(WidgetDefinitions):
     #                                                         Add your own watcher functions here
     # =======================================================================================================================================================
 
-    def __startstop(self, event=None):
-        if self.stop.clicks%2 ==0:
-            self.stop.name='Play!'
-            self.stop.button_type='success'
+        
+
+    def __playpause(self):
+        if self.playpause.clicks%2 ==1:
+            self.playpause.name='Play!'
+            self.playpause.button_type='success'
         else:
-            self.stop.name='STOP'
-            self.stop.button_type='danger'
+            self.playpause.name='Pause'
+            self.playpause.button_type='warning'
+
 
     def __change_button_color(widget):
         widget.button_type= 'danger'
@@ -190,10 +196,9 @@ class ConnectionWidgets(WidgetDefinitions):
         self.data= pd.concat([self.data, mframe], ignore_index=True)
         self.gauge_callback()
         self.dfstream.send(mframe)
-        if self.stop.clicks%2==1:
-            while True:
-                if self.stop.clicks%2==0:
-                    break
+        pn.io.push_notebook()
+        print(self.stop.value)
+        return (not self.stop.value)
 
         # self.update_dashboard()
 
@@ -330,47 +335,42 @@ class ConnectionWidgets(WidgetDefinitions):
     def hist_callback(self, data=None):
         # Convert 'DATETIME' column to datetime type
         data['DATETIME'] = pd.to_datetime(data['DATETIME'])
+        empty_bars = hv.Bars([(0, 0)], kdims=['DATE'], vdims=['value'])
 
         if data is None:
-            return hv.Bars()
+            return empty_bars 
 
         if data['DATETIME'].isna().any():
-            return hv.Bars()
+            return empty_bars 
     
         if len(data) == 0:
-            return hv.Bars()
+            return empty_bars 
         
-        # Get the latest timestamp
         latest_timestamp = data['DATETIME'].max()
+
         if self.last_unit.value=='years':
-            latest= latest_timestamp.year()
-            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(days=365 * self.last_n.values))]
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=365 * self.last_n.value))]
             last_data['DATE']= last_data['DATETIME'].dt.year
         
         elif self.last_unit.value=='months':
-            latest= latest_timestamp.month()
-            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(days=30 * self.last_n.values))]
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=30 * self.last_n.value))]
             last_data['DATE']= last_data['DATETIME'].dt.month
         
         elif self.last_unit.value=='days':
-            latest= latest_timestamp.day()
-            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(days=self.last_n.values))]
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=self.last_n.value))]
             last_data['DATE']= last_data['DATETIME'].dt.day
         
         elif self.last_unit.value=='hours':
-            latest= latest_timestamp.hour()
-            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(hours=self.last_n.values))]
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(hours=self.last_n.value))]
             last_data['DATE']= last_data['DATETIME'].dt.hour
         
         elif self.last_unit.value=='minutes':
-            latest= latest_timestamp.minutes()
-            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(minutes=self.last_n.values))]
-            last_data['DATE']= last_data['DATETIME'].dt.minutes
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(minutes=self.last_n.value))]
+            last_data['DATE']= last_data['DATETIME'].dt.minute
 
         elif self.last_unit.value=='seconds':
-            latest= latest_timestamp.seconds()
-            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(seconds=self.last_n.values))]
-            last_data['DATE']= last_data['DATETIME'].dt.seconds
+            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(seconds=self.last_n.value))]
+            last_data['DATE']= last_data['DATETIME'].dt.second
         
         mean_value = last_data.groupby('DATE')['value'].mean().reset_index()
         # Create a Curve element to display the mean values
@@ -392,12 +392,13 @@ class ConnectionWidgets(WidgetDefinitions):
 
     
     def gradient_pie(self, data):
+        empty_bars = hv.Bars([(0, 0)], kdims=['DATE'], vdims=['value'])
         value_new = data['value'].diff()
 
         # Check if value_new contains NaN or other non-numeric values
         value_new= value_new.dropna()
         if value_new.isna().any():
-            return hv.Bars()
+            return empty_bars
         
 
         change= pd.DataFrame()

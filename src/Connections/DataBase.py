@@ -71,9 +71,11 @@ class Connection:
             self.__import_status= True
             lg.info("Data imported from database successfully.")
             for i in data.index:
-                callback(pd.DataFrame(data.loc[i]).T)
+                status= callback(pd.DataFrame(data.loc[i]).T)
                 time.sleep(1)
-            return (self.__import_status, self.imported_data)
+                if not status:
+                    return self.__import_status
+            
         except Exception as e:
             lg.error("Execution failure")
             lg.exception("Exception: " + str(e))

@@ -66,7 +66,9 @@ class Connection:
                     req= Connection.flatten_nested_dictionary(message.value)
                     mframe = pd.DataFrame(req, index=[0])[[datetime_column, value_column]].rename(columns={datetime_column: 'DATETIME', value_column: 'value'})
 
-                    update_callback(mframe)
+                    status= update_callback(mframe)
+                    if not status:
+                        return self.__import_status
             except Exception as e:
                 lg.error(f'Error while consuming messages: {str(e)}')
         else:

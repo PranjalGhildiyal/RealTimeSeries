@@ -23,7 +23,7 @@ class WidgetDefinitions(ConfigReader):
         self.get_schema_status= False
         self.import_data_status= False
 
-        self.last_n= pn.widgets.IntInput(name='Enter `n` for metrics', value=1, sizing_mode= 'stretch_width')
+        self.last_n= pn.widgets.IntInput(name='Enter `n` for metrics', value=20, sizing_mode= 'stretch_width')
         self.last_unit= pn.widgets.Select(name= 'Select unit', options= ['minutes', 'hours', 'seconds', 'days', 'months', 'years'], value='minutes', sizing_mode= 'stretch_width')
         self.n_indexes= pn.widgets.IntInput(name='Enter number of observations to display', sizing_mode= 'stretch_width', value= 100)
         self.feature_shape= pn.widgets.IntInput(name= 'Enter forecast shape', sizing_mode='stretch_width', value=20)

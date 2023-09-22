@@ -33,16 +33,34 @@ class Dashboard(ConnectionWidgets):
         histogram_dmap= hv.DynamicMap(self.hist_callback, streams=[self.dfstream])
         hist_dmap= hv.DynamicMap(self.gradient_pie, streams=[self.dfstream])
         box_dmap= hv.DynamicMap(self.boxplot, streams=[self.dfstream])
+        print('Done till here!')
+
+        # Setting options:
+        curve_dmap.opts(shared_axes=False)
+        point_dmap.opts(shared_axes=False)
+        histogram_dmap.opts(shared_axes=False)
+        hist_dmap.opts(shared_axes=False)
+        box_dmap.opts(shared_axes=False)
+        lower_dashboard= (curve_dmap * point_dmap)
+        lower_dashboard.opts(
+                            opts.Points(color='count', line_color='blue', size=10, padding=0.1, xaxis=None, yaxis=None),
+                            opts.Curve(line_width=5, color='blue')
+                            )
+        
+        # Setting options:
+        layout = hv.Layout(lower_dashboard).opts(
+                                                sizing_mode='stretch_width'
+                                            )
+
+        main_dashboard= pn.GridSpec(sizing_mode='stretch_width')
+
+        main_dashboard[0, 0]= self.gauge
+        main_dashboard[0, 1] = histogram_dmap
+        main_dashboard[0, 2]= hist_dmap
+        main_dashboard[0, 3] = box_dmap
+        main_dashboard[1, :] = layout
 
 
-
-        upper_dash= pn.Row(self.gauge, histogram_dmap, hist_dmap, box_dmap, sizing_mode= 'stretch_width')
-        lower_dash= pn.Column((curve_dmap * point_dmap).opts(
-                                                                opts.Points(color='count', line_color='blue', size=5, padding=0.1, xaxis=None, yaxis=None),
-                                                                opts.Curve(line_width=1, color='blue'),
-                                                                width=1200,
-                                                                ), sizing_mode= 'stretch_width')
-
-        self.template.main.append(pn.Column(upper_dash, lower_dash, sizing_mode= 'stretch_width'))
+        self.template.main.append(main_dashboard)
         # Serving the app
         pn.serve(self.template)
