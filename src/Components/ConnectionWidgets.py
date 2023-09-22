@@ -327,9 +327,12 @@ class ConnectionWidgets(WidgetDefinitions):
     # def update_dashboard(self):
     #     print('Updating Dashboard now! New row={}'.format(self.data.loc[max(self.data.index)]))
 
-    def hist_callback(self, data):
+    def hist_callback(self, data=None):
         # Convert 'DATETIME' column to datetime type
         data['DATETIME'] = pd.to_datetime(data['DATETIME'])
+
+        if data is None:
+            return hv.Bars()
 
         if data['DATETIME'].isna().any():
             return hv.Bars()
@@ -340,33 +343,33 @@ class ConnectionWidgets(WidgetDefinitions):
         # Get the latest timestamp
         latest_timestamp = data['DATETIME'].max()
         if self.last_unit.value=='years':
-            latest_date= latest_timestamp.year
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=365 * self.last_n.values))]
+            latest= latest_timestamp.year()
+            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(days=365 * self.last_n.values))]
             last_data['DATE']= last_data['DATETIME'].dt.year
         
         elif self.last_unit.value=='months':
-            latest_date= latest_timestamp.month
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=30 * self.last_n.values))]
+            latest= latest_timestamp.month()
+            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(days=30 * self.last_n.values))]
             last_data['DATE']= last_data['DATETIME'].dt.month
         
         elif self.last_unit.value=='days':
-            latest_date= latest_timestamp.day
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=self.last_n.values))]
+            latest= latest_timestamp.day()
+            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(days=self.last_n.values))]
             last_data['DATE']= last_data['DATETIME'].dt.day
         
         elif self.last_unit.value=='hours':
-            latest_date= latest_timestamp.hour
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(hours=self.last_n.values))]
+            latest= latest_timestamp.hour()
+            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(hours=self.last_n.values))]
             last_data['DATE']= last_data['DATETIME'].dt.hour
         
         elif self.last_unit.value=='minutes':
-            latest_date= latest_timestamp.minutes
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(minutes=self.last_n.values))]
+            latest= latest_timestamp.minutes()
+            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(minutes=self.last_n.values))]
             last_data['DATE']= last_data['DATETIME'].dt.minutes
 
         elif self.last_unit.value=='seconds':
-            latest_date= latest_timestamp.seconds
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(seconds=self.last_n.values))]
+            latest= latest_timestamp.seconds()
+            last_data = data[data['DATETIME'] > (latest - pd.Timedelta(seconds=self.last_n.values))]
             last_data['DATE']= last_data['DATETIME'].dt.seconds
         
         mean_value = last_data.groupby('DATE')['value'].mean().reset_index()
