@@ -4,6 +4,7 @@ try:
     from RealTimeSeries.src.Connections import DataBase, Kafka, SystemFiles, url
     import panel as pn
     import time
+    import holoviews as hv
     import pandas as pd
     from pmdarima import arima
     from pmdarima import model_selection
@@ -310,3 +311,56 @@ class ConnectionWidgets(WidgetDefinitions):
 
     def update_dashboard(self):
         print('Updating Dashboard now! New row={}'.format(self.data.loc[max(self.data.index)]))
+
+    def hist_callback(self, data):
+        # Convert 'DATETIME' column to datetime type
+        data['DATETIME'] = pd.to_datetime(data['DATETIME'])
+        
+        # Get the latest timestamp
+        latest_timestamp = data['DATETIME'].max()
+        latest_date= latest_timestamp.date()
+        
+        # Calculate the mean of the last 20 days' values
+        last_20_days_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=3))]
+        last_20_days_data['DATE'] = last_20_days_data['DATETIME'].dt.day
+        mean_value = last_20_days_data.groupby('DATE')['value'].mean().reset_index()
+        
+        # Create a Curve element to display the mean values
+        curve = hv.Bars(mean_value, kdims=['DATE'], vdims=['value'])
+        
+        return curve
+    
+
+
+    def gauge_callback(self, data):
+        return hv.Bars(data, kdims=['DATETIME'], vdims='value')
+
+    
+    def gradient_pie(self, data):
+        value_new = data['value'].diff()
+
+        # Check if value_new contains NaN or other non-numeric values
+        value_new= value_new.dropna()
+        if value_new.isna().any():
+            return hv.Bars()
+        
+
+        change= pd.DataFrame()
+        change.loc['increase', 'shape']= value_new[value_new > 0].shape[0]
+        change.loc['decrease', 'shape'] = value_new[value_new < 0].shape[0]
+        change.loc['equal', 'shape'] = value_new[value_new == 0].shape[0]
+
+        change= change.reset_index()
+
+        # Create a Bars element with a 'color' dimension
+        bars = hv.Bars(change, kdims=['index'], vdims=['shape'])
+        
+
+        return bars
+
+
+
+    def boxplot(self, data):
+        box= hv.BoxWhisker(data['value'], vdims='value')
+        return box
+
