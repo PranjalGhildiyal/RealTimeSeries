@@ -3,6 +3,7 @@ import pandas as pd
 import io
 from RealTimeSeries.src.Logger.AppLogger import Applogger
 from RealTimeSeries.configurations.index import read_section
+import time
 
 
 class Connection:
@@ -67,11 +68,15 @@ class Connection:
             lg.error(f'Error downloading data: {str(e)}')
             return (status, f'Error downloading data: {str(e)}')
 
-    def import_data(self, timestamp_column, value_column):
+    def import_data(self, timestamp_column, value_column, callback):
         status= False
         if self.data is not None:
             status= True
-            return (status, self.data.rename(columns={timestamp_column: 'DATETIME', value_column: 'value'})[['DATETIME', 'value']])
+            self.data= self.data.rename(columns={timestamp_column: 'DATETIME', value_column: 'value'})[['DATETIME', 'value']]
+            for i in self.data.index:
+                callback(pd.DataFrame(self.data.loc[i]).T)
+                time.sleep(1)
+            return (status, self.data)
         else:
             lg.error('No data available to convert to DataFrame.')
             return (status, 'No data available to convert to DataFrame.')

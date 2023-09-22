@@ -1,5 +1,6 @@
 import pandas as pd
 import configparser
+import time
 from sqlalchemy import create_engine
 from RealTimeSeries.src.Logger.AppLogger import Applogger
 from RealTimeSeries.configurations.index import read_section
@@ -61,7 +62,7 @@ class Connection:
             lg.error('Error while getting schema. Error message: {}'.format(e))
             return (status, 'Error while getting schema. Error message: {}'.format(e))
 
-    def import_data(self, timestamp_column:str, value_column:str):
+    def import_data(self, timestamp_column:str, value_column:str, callback):
         query= 'select {},{} from {}.{}'.format(timestamp_column, value_column, self.configs['sql_database'], self.table_name)
         lg.info("Downloading data from database. Query:  %s, Engine: %s" , query,self.__engine)
         try:
@@ -69,6 +70,9 @@ class Connection:
             self.imported_data= data.rename(columns= {timestamp_column: 'DATETIME', value_column:'value'})
             self.__import_status= True
             lg.info("Data imported from database successfully.")
+            for i in data.index:
+                callback(pd.DataFrame(data.loc[i]).T)
+                time.sleep(1)
             return (self.__import_status, self.imported_data)
         except Exception as e:
             lg.error("Execution failure")
@@ -92,7 +96,7 @@ class Connection:
         self.connect()
         return self.__connection_status
     
-    def shutdown():
+    def shutdown(self):
         logger.shutdown()
 
     def __str__(self):

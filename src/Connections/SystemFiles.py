@@ -3,6 +3,7 @@ from RealTimeSeries.configurations.index import read_section
 from RealTimeSeries.src.Logger.AppLogger import Applogger
 import os
 from io import BytesIO
+import time
 
 class Connection:
     def __init__(self):
@@ -50,7 +51,7 @@ class Connection:
             return (status, list(data.values))
 
     
-    def import_data(self, timestamp_column, value_column):
+    def import_data(self, timestamp_column, value_column, callback):
         status= False
         if self.format == 'xlsx':
             if self.sheet_name is not None:
@@ -59,7 +60,11 @@ class Connection:
                 data = pd.read_excel(self.file, usecols=[timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column:  'value'})
             status= True
             lg.info('Data imported successfully!')
+            for i in data.index:
+                callback(data.loc[i])
+                time.sleep(1)
             return (status, data)
+        
         elif self.format == 'csv':
             self.file.seek(0)
             if self.separator is not None:
@@ -68,6 +73,9 @@ class Connection:
                 data= pd.read_csv(self.file, usecols=[timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column: 'value'})
             status= True
             lg.info('Data imported successfully!')
+            for i in data.index:
+                callback(pd.DataFrame(data.loc[i]).T)
+                time.sleep(1)
             return (status, data)
         
     def shutdown(self):
