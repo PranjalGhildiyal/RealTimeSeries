@@ -10,6 +10,7 @@ try:
     from pmdarima import model_selection
     from pmdarima import pipeline
     from pmdarima import preprocessing
+    from holoviews import opts
     import asyncio
 except ImportError as import_error:
     print(f'Could not import module: {import_error}.')
@@ -168,7 +169,7 @@ class ConnectionWidgets(WidgetDefinitions):
         self.sidebar= pn.Column(
                                     self.config_widgetbox,
                                     accordion,
-                                    pn.Row(self.stop, self.clear)
+                                    pn.Row(self.playpause, self.stop, self.clear)
                                 )
 
     # =======================================================================================================================================================
@@ -190,15 +191,20 @@ class ConnectionWidgets(WidgetDefinitions):
     def __change_button_color(widget):
         widget.button_type= 'danger'
 
-    def catch_value(self, mframe):
+    def catch_value(self):
         if self.data is None:
             self.data= pd.DataFrame()
-        self.data= pd.concat([self.data, mframe], ignore_index=True)
-        self.gauge_callback()
-        self.dfstream.send(mframe)
-        pn.io.push_notebook()
-        print(self.stop.value)
-        return (not self.stop.value)
+        for mframe in self.consumer_object:
+            self.data= pd.concat([self.data, mframe], ignore_index=True)
+            self.gauge_callback()
+            self.dfstream.send(mframe)
+            print(self.stop.value)
+            if self.stop.value:
+                return
+            if self.playpause.clicks % 2 == 1:
+                while self.playpause.clicks % 2 != 1:
+                    pass
+        # return (not self.stop.value)
 
         # self.update_dashboard()
 
@@ -259,15 +265,17 @@ class ConnectionWidgets(WidgetDefinitions):
             return
         
     def __begin_showcase(self, import_data_params):
-        print(import_data_params)
         print([param.value if hasattr(param, 'value') else param for param in import_data_params])
-        status, self.data= self.connection.import_data(*[param.value if hasattr(param, 'value') else param for param in import_data_params])
-        if status:
+        try:
+            self.consumer_object= self.connection.import_data(*[param.value if hasattr(param, 'value') else param for param in import_data_params])
             self.template.modal[0].append(pn.pane.Alert('Successfully Imported Data!', alert_type='success'))
             self.connection.shutdown()
             self.connection_status.value= False
-        else:
-            self.template.modal[0].append(pn.pane.Alert('Import Unsuccessful! {}'.format(self.data), alert_type='danger'))
+            self.catch_value()
+
+        except Exception as e:
+            print(e)
+            self.template.modal[0].append(pn.pane.Alert('Import Unsuccessful! {}'.format(e), alert_type='danger'))
             self.connection.shutdown()
             time.sleep(2)
             self.template.close_modal()
@@ -329,8 +337,13 @@ class ConnectionWidgets(WidgetDefinitions):
         format__= event.new.split('.')[-1]
         self.format.value= format__
 
-    # def update_dashboard(self):
-    #     print('Updating Dashboard now! New row={}'.format(self.data.loc[max(self.data.index)]))
+    def curve_update(self, data):
+        curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(line_width=1, color='lightblue', width=1200, show_grid=True)
+        points = hv.Points(data, kdims=['DATETIME', 'value'], vdims=['value']).opts(color='color', cmap='viridis', padding=0.1, width=1200, xaxis=None, yaxis=None, marker='o')
+        return (curve * points).opts(
+                                    opts.Points(line_color='blue', size=5, padding=0.1, xaxis=None, yaxis=None),
+                                    opts.Curve(line_width=2, color='lightblue')
+                                    )
 
     def hist_callback(self, data=None):
         # Convert 'DATETIME' column to datetime type
@@ -342,7 +355,7 @@ class ConnectionWidgets(WidgetDefinitions):
 
         if data['DATETIME'].isna().any():
             return empty_bars 
-    
+
         if len(data) == 0:
             return empty_bars 
         
@@ -350,32 +363,34 @@ class ConnectionWidgets(WidgetDefinitions):
 
         if self.last_unit.value=='years':
             last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=365 * self.last_n.value))]
-            last_data['DATE']= last_data['DATETIME'].dt.year
-        
+            last_data['LAST']= last_data['DATETIME'].dt.year
+
         elif self.last_unit.value=='months':
             last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=30 * self.last_n.value))]
-            last_data['DATE']= last_data['DATETIME'].dt.month
+            last_data['LAST']= last_data['DATETIME'].dt.month
         
         elif self.last_unit.value=='days':
             last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=self.last_n.value))]
-            last_data['DATE']= last_data['DATETIME'].dt.day
+            last_data['LAST']= last_data['DATETIME'].dt.day
         
         elif self.last_unit.value=='hours':
             last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(hours=self.last_n.value))]
-            last_data['DATE']= last_data['DATETIME'].dt.hour
+            last_data['LAST']= last_data['DATETIME'].dt.hour
         
         elif self.last_unit.value=='minutes':
             last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(minutes=self.last_n.value))]
-            last_data['DATE']= last_data['DATETIME'].dt.minute
+            last_data['LAST']= last_data['DATETIME'].dt.minute
 
         elif self.last_unit.value=='seconds':
+            
             last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(seconds=self.last_n.value))]
-            last_data['DATE']= last_data['DATETIME'].dt.second
+            last_data['LAST']= last_data['DATETIME'].dt.second
+
         
-        mean_value = last_data.groupby('DATE')['value'].mean().reset_index()
-        # Create a Curve element to display the mean values
-        curve = hv.Bars(mean_value, kdims=['DATE'], vdims=['value'])
-        
+        mean_value = last_data.groupby('LAST')['value'].mean().reset_index()
+        mean_value['LAST'] = mean_value['LAST'].astype('category')
+        print(mean_value)
+        curve = hv.Bars(mean_value, kdims=['LAST'], vdims=['value'])
         return curve
     
 
