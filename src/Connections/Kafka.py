@@ -13,7 +13,9 @@ class Connection:
             print('Could not find section. {}'.format(logging_location))
             return None
         global lg
-        lg= Applogger(logging_location['kafka']).logger
+        global logger
+        logger= Applogger(logging_location['kafka'])
+        lg= logger.logger
         self.__connection_status = False
         self.__import_status = False
         status, self.configs = read_section('KAFKA')
@@ -74,6 +76,9 @@ class Connection:
                 lg.error(f'Error while consuming messages: {str(e)}')
         else:
             lg.warning('Not connected to Kafka. Call connect() first.')
+    
+    def shutdown(self):
+        logger.shutdown()
 
     def disconnect(self):
         if self.__connection_status:
