@@ -38,15 +38,17 @@ class Dashboard(ConnectionWidgets):
         # Setting options:
         histogram_dmap.opts(shared_axes=False)
         hist_dmap.opts(shared_axes=False)
-        box_dmap.opts(shared_axes=False)
+
+        # Making a new lower-dashboard
+        
 
         main_dashboard= pn.GridSpec(sizing_mode='stretch_width')
 
         main_dashboard[0, 0]= self.gauge
-        main_dashboard[0, 1] = histogram_dmap
+        main_dashboard[0, 1:2] = histogram_dmap
         main_dashboard[0, 2]= hist_dmap
-        main_dashboard[0, 3] = box_dmap
-        main_dashboard[1, :] = lower_dashboard_dmap
+        main_dashboard[1, 0:2] = lower_dashboard_dmap
+        main_dashboard[1, 2] = box_dmap
 
 
         self.template.main.append(main_dashboard)

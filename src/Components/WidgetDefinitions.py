@@ -1,5 +1,8 @@
 from RealTimeSeries.src.Components.ConfigReader import ConfigReader
-import panel as pn    
+import panel as pn
+import threading
+from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.pyplot as plt
         
 #===========================================================
 #                         Step 2
@@ -27,14 +30,24 @@ class WidgetDefinitions(ConfigReader):
         self.last_unit= pn.widgets.Select(name= 'Select unit', options= ['minutes', 'hours', 'seconds', 'days', 'months', 'years'], value='hours', sizing_mode= 'stretch_width')
         self.n_indexes= pn.widgets.IntInput(name='Enter number of observations to display', sizing_mode= 'stretch_width', value= 100)
         self.feature_shape= pn.widgets.IntInput(name= 'Enter forecast shape', sizing_mode='stretch_width', value=20)
-        self.training_shape= pn.widgets.FloatInput(name='Enter minimum training threshold', sizing_mode= 'stretch_width', value=0.8)
+        self.training_shape= pn.widgets.IntInput(name='Enter minimum training threshold', sizing_mode= 'stretch_width', value=10000)
         self.config_widgetbox= pn.WidgetBox(pn.Column(pn.Row(self.last_n, self.last_unit), pn.Row(self.feature_shape, self.n_indexes), self.training_shape), sizing_mode= 'stretch_width')
 
         # Making main
-        self.gauge= pn.indicators.Gauge(name='Instantaneous Value', value=0, format= '{value}')
+        stops = [
+                (0.0, '#28242c'),     # Dark blue at the lowest value
+                (0.5, '#2596be'),
+                (1.0, 'cyan') # Light blue at the highest value
+            ]
+        cmap = LinearSegmentedColormap.from_list('shades_of_blue', stops)
+        colors = [(value/1000, plt.cm.colors.to_hex(cmap(value/1000))) for value in range(1000)]
+        self.gauge= pn.indicators.Gauge(name='', value=0, format= '{value}', colors= colors)
         self.bars= pn.pane.Plotly()
         self.pie_chart= pn.pane.Plotly()
         self.main_chart= pn.pane.Plotly()
+
+        # Regarding multithreading
+        self.stop_flag = threading.Event()
         
         # Defining data for the first time
         self.data= None
