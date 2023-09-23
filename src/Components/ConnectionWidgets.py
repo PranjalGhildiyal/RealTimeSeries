@@ -11,6 +11,7 @@ try:
     from pmdarima import pipeline
     from pmdarima import preprocessing
     from holoviews import opts
+    import threading
     import asyncio
 except ImportError as import_error:
     print(f'Could not import module: {import_error}.')
@@ -157,19 +158,21 @@ class ConnectionWidgets(WidgetDefinitions):
 
         # Making a clear button
         self.clear= pn.widgets.Button(name= 'CLEAR', button_type='danger', sizing_mode= 'stretch_width')
+        self.clear.on_click(self.__CLEAR)
 
         # Making a STOP button
-        self.stop=pn.widgets.Toggle(name='STOP', button_type='danger', sizing_mode='stretch_width', value=False)
+        self.stop=pn.widgets.Button(name='STOP', button_type='danger', sizing_mode='stretch_width')
+        self.stop.on_click(self.__STOP)
 
-        # Making a pause button
-        self.playpause= pn.widgets.Button(name='Pause', button_type= 'warning', sizing_mode='stretch_width')
-        self.playpause.on_click(self.__playpause)
+        # # Making a pause button
+        # self.playpause= pn.widgets.Button(name='Pause', button_type= 'warning', sizing_mode='stretch_width')
+        # self.playpause.on_click(self.__playpause)
 
         # Now finally making a sidebar
         self.sidebar= pn.Column(
                                     self.config_widgetbox,
                                     accordion,
-                                    pn.Row(self.playpause, self.stop, self.clear)
+                                    pn.Row(self.stop, self.clear)
                                 )
 
     # =======================================================================================================================================================
@@ -177,15 +180,14 @@ class ConnectionWidgets(WidgetDefinitions):
     #                                                         Add your own watcher functions here
     # =======================================================================================================================================================
 
-        
+    def __STOP(self, event=None):
+        self.stop_flag.set()
+        print('STOPPED!')
 
-    def __playpause(self):
-        if self.playpause.clicks%2 ==1:
-            self.playpause.name='Play!'
-            self.playpause.button_type='success'
-        else:
-            self.playpause.name='Pause'
-            self.playpause.button_type='warning'
+    def __CLEAR(self, event=None):
+        self.dfstream.clear()
+        self.gauge.bounds= (0, 100)
+        self.gauge.value= 50
 
 
     def __change_button_color(widget):
@@ -195,15 +197,18 @@ class ConnectionWidgets(WidgetDefinitions):
         if self.data is None:
             self.data= pd.DataFrame()
         for mframe in self.consumer_object:
+            if self.stop_flag.is_set():
+                break 
             self.data= pd.concat([self.data, mframe], ignore_index=True)
+            time.sleep(0.1)  # Add a small sleep interval (e.g., 0.1 seconds)
+            if self.stop_flag.is_set():
+                break 
             self.gauge_callback()
+            if self.stop_flag.is_set():
+                break 
             self.dfstream.send(mframe)
-            print(self.stop.value)
-            if self.stop.value:
-                return
-            if self.playpause.clicks % 2 == 1:
-                while self.playpause.clicks % 2 != 1:
-                    pass
+            if self.stop_flag.is_set():
+                break 
         # return (not self.stop.value)
 
         # self.update_dashboard()
@@ -271,7 +276,11 @@ class ConnectionWidgets(WidgetDefinitions):
             self.template.modal[0].append(pn.pane.Alert('Successfully Imported Data!', alert_type='success'))
             self.connection.shutdown()
             self.connection_status.value= False
-            self.catch_value()
+            self.stop_flag.clear()  # Ensure the flag is initially cleared
+            self.loop_thread = threading.Thread(target=self.catch_value)
+            self.loop_thread.start()
+            self.template.close_modal()
+            # self.__model_data()
 
         except Exception as e:
             print(e)
@@ -281,9 +290,14 @@ class ConnectionWidgets(WidgetDefinitions):
             self.template.close_modal()
             return
         
-        self.__model_data()
+        
         
     def __model_data(self):
+        while self.data.shape[0] < self.training_shape.value:
+            if self.stop_flag.is_set():
+                return
+            pass
+
         self.modelling_status.value= True
         modelling_update= pn.pane.Alert('Modelling Data Now!', alert_type='info')
         self.data= self.data.dropna()
@@ -338,12 +352,18 @@ class ConnectionWidgets(WidgetDefinitions):
         self.format.value= format__
 
     def curve_update(self, data):
-        curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(line_width=1, color='lightblue', width=1200, show_grid=True)
-        points = hv.Points(data, kdims=['DATETIME', 'value'], vdims=['value']).opts(color='color', cmap='viridis', padding=0.1, width=1200, xaxis=None, yaxis=None, marker='o')
-        return (curve * points).opts(
-                                    opts.Points(line_color='blue', size=5, padding=0.1, xaxis=None, yaxis=None),
-                                    opts.Curve(line_width=2, color='lightblue')
-                                    )
+        curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(line_width=1, color='lightblue', width=1000, show_grid=True)
+        return (curve).opts(
+                            opts.Curve(line_width=2, color='lightblue')
+                            )
+    
+    # def curve_update(self, data):
+    #     curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(line_width=1, color='lightblue', width=1000, show_grid=True)
+    #     points = hv.Points(data, kdims=['DATETIME', 'value'], vdims=['value']).opts(color='color', cmap='viridis', padding=0.1, width=1000, marker='o')
+    #     return (curve * points).opts(
+    #                                 opts.Points(line_color='blue', size=5, padding=0.1),
+    #                                 opts.Curve(line_width=2, color='lightblue')
+    #                                 )
 
     def hist_callback(self, data=None):
         # Convert 'DATETIME' column to datetime type
@@ -389,8 +409,8 @@ class ConnectionWidgets(WidgetDefinitions):
         
         mean_value = last_data.groupby('LAST')['value'].mean().reset_index()
         mean_value['LAST'] = mean_value['LAST'].astype('category')
-        print(mean_value)
-        curve = hv.Bars(mean_value, kdims=['LAST'], vdims=['value'])
+        # print(mean_value)
+        curve = hv.Bars(mean_value, kdims=['LAST'], vdims=['value']).opts(width= 800)
         return curve
     
 

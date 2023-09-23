@@ -80,4 +80,4 @@ class Connection:
             return (status, 'No data available to convert to DataFrame.')
 
     def shutdown(self):
-        logger.shutdowm()
+        logger.shutdown()
