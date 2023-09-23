@@ -74,10 +74,7 @@ class Connection:
             status= True
             self.data= self.data.rename(columns={timestamp_column: 'DATETIME', value_column: 'value'})[['DATETIME', 'value']]
             for i in self.data.index:
-                status= callback(pd.DataFrame(self.data.loc[i]).T)
-                time.sleep(1)
-                if not status:
-                    return True
+                yield pd.DataFrame(data.loc[i]).T
         else:
             lg.error('No data available to convert to DataFrame.')
             return (status, 'No data available to convert to DataFrame.')
