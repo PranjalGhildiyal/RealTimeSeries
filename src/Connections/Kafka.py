@@ -1,8 +1,8 @@
 from kafka import KafkaConsumer
 import json
 import pandas as pd
-from RealTimeSeries.src.Logger.AppLogger import Applogger
-from RealTimeSeries.configurations.index import read_section
+from src.Logger.AppLogger import Applogger
+from configurations.index import read_section
 
 
 class Connection:

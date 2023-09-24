@@ -1,4 +1,4 @@
-from RealTimeSeries.src.Components.ConnectionWidgets import ConnectionWidgets
+from src.Components.ConnectionWidgets import ConnectionWidgets
 import panel as pn
 import pandas as pd
 from holoviews.streams import Pipe, Buffer
@@ -8,10 +8,9 @@ from holoviews import opts
 import warnings
 warnings.filterwarnings('ignore')
 
-class Dashboard(ConnectionWidgets):
+class App(ConnectionWidgets):
     def __init__(self):
         super().__init__() 
-        print('in Dashboard')
         hv.extension('bokeh')
         pn.extension('plotly')
         theme = built_in_themes["dark_minimal"]

@@ -1,4 +1,4 @@
-from RealTimeSeries.src.Components.ConfigReader import ConfigReader
+from src.Components.ConfigReader import ConfigReader
 import panel as pn
 import threading
 from matplotlib.colors import LinearSegmentedColormap
@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 class WidgetDefinitions(ConfigReader):
     def __init__(self): 
         super().__init__()
-        print('in WidgetDefinitions')
 
         # Defining important widgets
         self.datetime_column_selector= pn.widgets.Select(name= 'Select datetime column')

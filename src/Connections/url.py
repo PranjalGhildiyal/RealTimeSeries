@@ -1,8 +1,8 @@
 import requests
 import pandas as pd
 import io
-from RealTimeSeries.src.Logger.AppLogger import Applogger
-from RealTimeSeries.configurations.index import read_section
+from src.Logger.AppLogger import Applogger
+from configurations.index import read_section
 import time
 
 

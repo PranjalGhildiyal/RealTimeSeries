@@ -1,20 +1,18 @@
 # Import your custom connector
-try:
-    from RealTimeSeries.src.Components.WidgetDefinitions import WidgetDefinitions
-    from RealTimeSeries.src.Connections import DataBase, Kafka, SystemFiles, url
-    import panel as pn
-    import time
-    import holoviews as hv
-    import pandas as pd
-    from pmdarima import arima
-    from pmdarima import model_selection
-    from pmdarima import pipeline
-    from pmdarima import preprocessing
-    from holoviews import opts
-    import threading
-    import asyncio
-except ImportError as import_error:
-    print(f'Could not import module: {import_error}.')
+from src.Components.WidgetDefinitions import WidgetDefinitions
+from src.Connections import DataBase, Kafka, SystemFiles, url
+import panel as pn
+import time
+import holoviews as hv
+import pandas as pd
+from pmdarima import arima
+from pmdarima import model_selection
+from pmdarima import pipeline
+from pmdarima import preprocessing
+from holoviews import opts
+import threading
+import asyncio
+
 
 #===========================================================
 #                         Step 3
@@ -48,7 +46,6 @@ class ConnectionWidgets(WidgetDefinitions):
         Steo 3.4: Add your widget bunch to the accordion as a tuple, with first element as the display name. eg: ('Display Name', widget_bunch)
         '''
         super().__init__() 
-        print('in ConnectionWidgets')
 
         # -------------------------------------------------------------------------------------------------------------------------------------------------
         #                                                            CHANGE FROM HERE

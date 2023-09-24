@@ -1,4 +1,4 @@
-from RealTimeSeries.configurations.index import read_section
+from configurations.index import read_section
 
 #===========================================================
 #                         Step 1
@@ -7,7 +7,6 @@ from RealTimeSeries.configurations.index import read_section
 
 class ConfigReader:
     def __init__(self):
-        print('in ConfigReader')
         _, self.db_configs= read_section('SQLDB')
         _, self.kafka_configs= read_section('KAFKA')
         _, self.sharepoint_configs= read_section('SHAREPOINT')
