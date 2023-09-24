@@ -5,6 +5,8 @@ Real time streaming of a time series with corresponding forecasts.
 
 RealTimeSeries is a powerful and flexible application designed for real-time time series data visualization and monitoring. It allows users to connect to various data sources, including databases, Apache Kafka, URLs, and the local filesystem, to visualize time series data in a dynamic and interactive dashboard. This project is particularly well-suited for applications involving real-time data simulation and monitoring.
 
+![Dashboard](https://github.com/PranjalGhildiyal/RealTimeSeries/blob/production/attachments/dashboardFirstLooks.gif)
+
 ### Key Features
 
 - **Flexible Data Sources**: RealTimeSeries supports a variety of data sources out of the box, including databases, Apache Kafka, URLs, and the filesystem. Additionally, it can be easily extended to support custom data import options.
@@ -69,6 +71,8 @@ RealTimeSeries supports various data sources for time series data:
 - **URL**: Fetch time series data from a remote URL.
 - **Filesystem**: Read time series data from local files.
 
+![ImportExample](https://github.com/PranjalGhildiyal/RealTimeSeries/blob/production/attachments/dataImport.gif)
+
 The application provides a user-friendly interface for configuring these connections. Follow the prompts to specify your connection details.
 
 ### Customizing Data Import
@@ -126,6 +130,7 @@ RealTimeSeries is designed to be highly customizable. If you need to connect to 
 ### Real-Time Visualization
 
 Once you have configured your data source, RealTimeSeries will continuously visualize the time series data in real time. The dynamic dashboard allows you to monitor and interact with the data as it updates.
+![Visualization](https://github.com/PranjalGhildiyal/RealTimeSeries/blob/production/attachments/startSimulation.gif)
 
 ## Contributing
 
@@ -143,3 +148,4 @@ We have exciting plans for the future of RealTimeSeries. Here's a glimpse of wha
 Stay tuned for updates and enhancements to make RealTimeSeries even more powerful and versatile!
 
 ---
+
