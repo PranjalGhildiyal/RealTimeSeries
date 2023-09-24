@@ -26,29 +26,31 @@ class Dashboard(ConnectionWidgets):
         # Adding an empty column here. Necessary for design.
         self.template.modal.append(pn.Column())
 
+        # opts.defaults(
+        #                 opts.Curve(sizing_mode='stretch_both'),
+        #                 opts.BoxWhisker(sizing_mode= 'stretch_both'),
+        #                 opts.Bars(sizing_mode= 'stretch_both')
+        #             )
+
         # Adding components for main here
         example = pd.DataFrame({'DATETIME': [], 'value': []}, columns=['DATETIME', 'value'])
         self.dfstream = Buffer(example, length=self.n_indexes.value, index=False)
-        lower_dashboard_dmap = hv.DynamicMap(self.curve_update, streams=[self.dfstream])
-        histogram_dmap= hv.DynamicMap(self.hist_callback, streams=[self.dfstream])
-        hist_dmap= hv.DynamicMap(self.gradient_pie, streams=[self.dfstream])
-        box_dmap= hv.DynamicMap(self.boxplot, streams=[self.dfstream])
+        lower_dashboard_dmap = pn.panel(hv.DynamicMap(self.curve_update, streams=[self.dfstream]),sizing_mode='stretch_both')
+        histogram_dmap= pn.panel(hv.DynamicMap(self.hist_callback, streams=[self.dfstream]).opts(shared_axes=False),sizing_mode='stretch_both')
+        hist_dmap= pn.panel(hv.DynamicMap(self.gradient_pie, streams=[self.dfstream]).opts(shared_axes=False),sizing_mode='stretch_both')
+        box_dmap= pn.panel(hv.DynamicMap(self.boxplot, streams=[self.dfstream]),sizing_mode='stretch_both')
         print('Done till here!')
-
-        # Setting options:
-        histogram_dmap.opts(shared_axes=False)
-        hist_dmap.opts(shared_axes=False)
 
         # Making a new lower-dashboard
         
 
-        main_dashboard= pn.GridSpec(sizing_mode='stretch_width')
+        main_dashboard= pn.GridSpec(min_width= 800, min_height= 600, sizing_mode='scale_both')
 
         main_dashboard[0, 0]= self.gauge
-        main_dashboard[0, 1:2] = histogram_dmap
-        main_dashboard[0, 2]= hist_dmap
-        main_dashboard[1, 0:2] = lower_dashboard_dmap
-        main_dashboard[1, 2] = box_dmap
+        main_dashboard[0, 1:4] = histogram_dmap
+        main_dashboard[0, 4]= hist_dmap
+        main_dashboard[1, 0:4] = lower_dashboard_dmap
+        main_dashboard[1, 4] = box_dmap
 
 
         self.template.main.append(main_dashboard)

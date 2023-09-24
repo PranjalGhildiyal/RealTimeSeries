@@ -39,9 +39,10 @@ class WidgetDefinitions(ConfigReader):
                 (0.5, '#2596be'),
                 (1.0, 'cyan') # Light blue at the highest value
             ]
+        
         cmap = LinearSegmentedColormap.from_list('shades_of_blue', stops)
         colors = [(value/1000, plt.cm.colors.to_hex(cmap(value/1000))) for value in range(1000)]
-        self.gauge= pn.indicators.Gauge(name='', value=0, format= '{value}', colors= colors)
+        self.gauge= pn.indicators.Gauge(name='', value=0, format= '{value}', colors= colors, sizing_mode= 'stretch_both')# height= 300, wwidth= 300)
         self.bars= pn.pane.Plotly()
         self.pie_chart= pn.pane.Plotly()
         self.main_chart= pn.pane.Plotly()

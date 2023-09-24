@@ -183,11 +183,13 @@ class ConnectionWidgets(WidgetDefinitions):
     def __STOP(self, event=None):
         self.stop_flag.set()
         print('STOPPED!')
+        
 
     def __CLEAR(self, event=None):
         self.dfstream.clear()
         self.gauge.bounds= (0, 100)
         self.gauge.value= 50
+        self.data= None
 
 
     def __change_button_color(widget):
@@ -196,6 +198,7 @@ class ConnectionWidgets(WidgetDefinitions):
     def catch_value(self):
         if self.data is None:
             self.data= pd.DataFrame()
+            self.sidebar[0][0][1][1].disable= True
         for mframe in self.consumer_object:
             if self.stop_flag.is_set():
                 break 
@@ -352,9 +355,11 @@ class ConnectionWidgets(WidgetDefinitions):
         self.format.value= format__
 
     def curve_update(self, data):
-        curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(line_width=1, color='lightblue', width=1000, show_grid=True)
+        
+        data['DATETIME'] = pd.to_datetime(data['DATETIME'])
+        curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(line_width=1, color='lightblue', show_grid=True, responsive=True, gridstyle= {'grid_line_color': '#2596be'})#, width=1300, height= 700)
         return (curve).opts(
-                            opts.Curve(line_width=2, color='lightblue')
+                            opts.Curve(line_width=2)
                             )
     
     # def curve_update(self, data):
@@ -367,50 +372,58 @@ class ConnectionWidgets(WidgetDefinitions):
 
     def hist_callback(self, data=None):
         # Convert 'DATETIME' column to datetime type
-        data['DATETIME'] = pd.to_datetime(data['DATETIME'])
-        empty_bars = hv.Bars([(0, 0)], kdims=['DATE'], vdims=['value'])
 
         if data is None:
-            return empty_bars 
+            data = pd.DataFrame({'LAST': range(self.last_n.value), 'value': [0] * self.last_n})
+            return hv.Bars(data, kdims=['LAST'], vdims=['value']).opts(responsive=True)
 
         if data['DATETIME'].isna().any():
-            return empty_bars 
-
-        if len(data) == 0:
-            return empty_bars 
+            data = pd.DataFrame({'LAST': range(self.last_n.value), 'value': [0] * self.last_n.value})
+            return hv.Bars(data, kdims=['LAST'], vdims=['value']).opts(responsive=True)
         
-        latest_timestamp = data['DATETIME'].max()
+        if len(data) == 0:
+            data = pd.DataFrame({'LAST': range(self.last_n.value), 'value': [0] * self.last_n.value})
+            return hv.Bars(data, kdims=['LAST'], vdims=['value']).opts(responsive=True)
+        
+        data['DATETIME'] = pd.to_datetime(data['DATETIME'])
+        
+        # latest_timestamp = data['DATETIME'].max()
 
         if self.last_unit.value=='years':
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=365 * self.last_n.value))]
+            latest_timestamp = data['DATETIME'].max().year
+            last_data = data[data['DATETIME'].dt.year > (latest_timestamp - self.last_n.value)]
             last_data['LAST']= last_data['DATETIME'].dt.year
 
         elif self.last_unit.value=='months':
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=30 * self.last_n.value))]
-            last_data['LAST']= last_data['DATETIME'].dt.month
+            latest_timestamp = pd.Period(data['DATETIME'].max().to_period('M'), freq='M')
+            last_data = data[data['DATETIME'].dt.to_period('M') > (latest_timestamp - self.last_n.value)]
+            last_data['LAST']= last_data['DATETIME'].dt.to_period('M')
         
         elif self.last_unit.value=='days':
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(days=self.last_n.value))]
-            last_data['LAST']= last_data['DATETIME'].dt.day
+            latest_timestamp = data['DATETIME'].max().date()
+            last_data = data[data['DATETIME'].dt.date > (latest_timestamp - pd.DateOffset(days= self.last_n.value))]
+            last_data['LAST']= last_data['DATETIME'].dt.date
         
         elif self.last_unit.value=='hours':
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(hours=self.last_n.value))]
-            last_data['LAST']= last_data['DATETIME'].dt.hour
+            latest_timestamp = data['DATETIME'].max().floor('H')
+            last_data = data[data['DATETIME'].dt.floor('H') > (latest_timestamp - pd.DateOffset(hours=self.last_n.value))]
+            last_data['LAST']= last_data['DATETIME'].dt.floor('H')
         
         elif self.last_unit.value=='minutes':
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(minutes=self.last_n.value))]
-            last_data['LAST']= last_data['DATETIME'].dt.minute
+            latest_timestamp = data['DATETIME'].max().floor('T')
+            last_data = data[data['DATETIME'].dt.floor('T')  > (latest_timestamp - pd.DateOffset(minutes=self.last_n.value))]
+            last_data['LAST']= last_data['DATETIME'].dt.floor('T')
 
         elif self.last_unit.value=='seconds':
-            
-            last_data = data[data['DATETIME'] > (latest_timestamp - pd.Timedelta(seconds=self.last_n.value))]
-            last_data['LAST']= last_data['DATETIME'].dt.second
+            latest_timestamp = data['DATETIME'].max().floor('S')
+            last_data = data[data['DATETIME'].dt.floor('S')  > (latest_timestamp - pd.DateOffset(seconds=self.last_n.value))]
+            last_data['LAST']= last_data['DATETIME'].dt.floor('S')
 
         
         mean_value = last_data.groupby('LAST')['value'].mean().reset_index()
         mean_value['LAST'] = mean_value['LAST'].astype('category')
-        # print(mean_value)
-        curve = hv.Bars(mean_value, kdims=['LAST'], vdims=['value']).opts(width= 800)
+
+        curve = hv.Bars(mean_value, kdims=['LAST'], vdims=['value']).opts(responsive=True, xticks={'rotation': 45})
         return curve
     
 
@@ -447,11 +460,11 @@ class ConnectionWidgets(WidgetDefinitions):
         bars = hv.Bars(change, kdims=['index'], vdims=['shape'])
         
 
-        return bars
+        return bars.opts(responsive=True)#.opts(width= 200, height= 300)
 
 
 
     def boxplot(self, data):
-        box= hv.BoxWhisker(data['value'], vdims='value')
-        return box
+        box= hv.BoxWhisker(data['value'], vdims='value')#.opts(width= 200, height= 700)
+        return box.opts(responsive=True)
 
