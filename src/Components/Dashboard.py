@@ -10,6 +10,13 @@ warnings.filterwarnings('ignore')
 
 class App(ConnectionWidgets):
     def __init__(self):
+        '''
+        class App
+        - serves the final App: `Clinician` for Real time data streaming and visualization.
+        
+        -----------------------------------------
+        developed by: Pranjal Ghildiyal
+        '''
         super().__init__() 
         hv.extension('bokeh')
         pn.extension('plotly')

@@ -43,7 +43,8 @@ class ConnectionWidgets(WidgetDefinitions):
 
         Step 3.3: Add watcher function in the syntax:
              self.your_custom_import_button_widget.on_click(lambda event: self.__combined_connector(Method.Connection, init_param_list, connect_param_list, get_schema_param_list, import_data_param_list, self.your_custom_import_button_widget))
-        Steo 3.4: Add your widget bunch to the accordion as a tuple, with first element as the display name. eg: ('Display Name', widget_bunch)
+        
+        Step 3.4: Add your widget bunch to the accordion as a tuple, with first element as the display name. eg: ('Display Name', widget_bunch)
         '''
         super().__init__() 
 

@@ -6,6 +6,14 @@ from configurations.index import read_section
 
 
 class Connection:
+    '''
+    Apache-Kafka connector:
+    - Connects to one topic in a broker.
+    - default configs provided in configuration/config.ini.
+    
+    ----------------------------------
+    Developed by: Pranjal Ghildiyal
+    '''
     def __init__(self):
         status, logging_location= read_section('LOCATIONS')
         self.data= pd.DataFrame()

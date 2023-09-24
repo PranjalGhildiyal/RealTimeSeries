@@ -7,6 +7,14 @@ import time
 
 
 class Connection:
+    '''
+    URL connector:
+    - Connects to a url source or data.
+    - Source url should be public without any permissions needed.
+    
+    ----------------------------------
+    Developed by: Pranjal Ghildiyal
+    '''
     def __init__(self, url):
         self.url = url
         self.__connection_status = False  # Initialize a flag for valid connection

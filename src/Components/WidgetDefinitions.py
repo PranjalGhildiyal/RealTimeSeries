@@ -12,6 +12,11 @@ import matplotlib.pyplot as plt
 class WidgetDefinitions(ConfigReader):
     def __init__(self): 
         super().__init__()
+        '''
+        class WidgetDefinitions
+        - All widgets used in the final App are defined here.
+        - any app widget addition/initiation to happen here.
+        '''
 
         # Defining important widgets
         self.datetime_column_selector= pn.widgets.Select(name= 'Select datetime column')

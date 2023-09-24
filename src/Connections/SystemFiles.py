@@ -6,6 +6,15 @@ from io import BytesIO
 import time
 
 class Connection:
+    '''
+    System-Files connector:
+    - Connects to one file in the filesystem.
+    - Accepted formats: `.xlsx`, `.csv`.
+    
+    ----------------------------------
+    Developed by: Pranjal Ghildiyal
+    '''
+
     def __init__(self):
         status, logging_location= read_section('LOCATIONS')
         if not status:

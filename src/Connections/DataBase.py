@@ -7,6 +7,14 @@ from configurations.index import read_section
     
 
 class Connection:
+    '''
+    Database connector:
+    - Connects to database
+    - default configs provided in configuration/config.ini.
+    
+    ----------------------------------
+    Developed by: Pranjal Ghildiyal
+    '''
     def __init__(self):
         status, logging_location= read_section('LOCATIONS')
         if not status:
