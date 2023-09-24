@@ -2,10 +2,10 @@
 
 RealTimeSeries is designed to be highly customizable. If you need to connect to a data source that is not included in the predefined options, you can extend the application to support custom data import methods. Detailed instructions:
 
-#### ``Step 3.1``: Define Buttons for Input to a Connector
-   - Go to [ConnectionWidgets.py](src/Components/ConnectionWidgets.py). You need to make changes there in order to build a custom import method.
+#### ``Step 3.1``: Define Buttons for Input to a Connector 
+   - Go to [ConnectionWidgets.py](https://github.com/PranjalGhildiyal/RealTimeSeries/blob/production/src/Components/ConnectionWidgets.py). You need to make changes there in order to build a custom import method.
    - Structure of the Connector:
-       - The connector should be a python class, stored in [`Connections`](src/Connections) folder in the src folder.
+       - The connector should be a python class, stored in this folder.
        - The connector should have four attributes:
            - `__init__(*init_connection_parameters)`: The `__init__` function.
            - `connect(*connect_parameters)`: The method to connect. This should return a boolean `True` or `False` based on the connection status.
@@ -46,4 +46,4 @@ RealTimeSeries is designed to be highly customizable. If you need to connect to 
    ```
 
 
-**PLEASE SEE [ConnectionWidgets.py](src/Components/ConnectionWidgets.py) FOR FURTHER DETAILS**
+**PLEASE SEE [ConnectionWidgets.py](https://github.com/PranjalGhildiyal/RealTimeSeries/blob/production/src/Components/ConnectionWidgets.py) FOR FURTHER DETAILS**
