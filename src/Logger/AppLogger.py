@@ -4,6 +4,12 @@ import os
 
 
 class Applogger():
+    '''class Applogger: custom Logger class for RealTImeSeries App.
+        - property: logger
+            - returns logger initialized for that particular connection method. 
+            - Can be used to log in the directory mentioned in config.ini
+        - property: shutdown
+            - shuts the connection down to prevent duplicate entries in the log file.'''
     def __init__(self, log_file_location, timezone = 'Asia/Kolkata'):
         self.timezone = timezone
         self.login = pd.to_datetime(pd.Timestamp.now(tz= timezone).strftime('%Y-%m-%d %H:%M:%S'))
