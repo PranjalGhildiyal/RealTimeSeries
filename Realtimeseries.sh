@@ -24,6 +24,6 @@ fi
 python app.py
 
 # Make the run_app.sh script executable
-chmod +x run_app.sh
+chmod +x Realtimeseries.sh
 
 echo "Installation complete. You can now run the application by executing Realtimeseries.sh."
