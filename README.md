@@ -14,7 +14,7 @@ RealTimeSeries is a powerful and flexible application designed for real-time tim
 - **Advanced Plotting**: RealTimeSeries offers features such as box plots, aggregate plots, and change bar plots that update in real time, providing deeper insights into time series data.
 
 - **Scalability**: Users can import and simulate data independently, allowing for a scalable and versatile data analysis environment.
-
+  
 - **Forecasting and Real-Time Predictions** (Upcoming): Future updates will incorporate forecasting techniques for real-time predictions, enhancing the application's capabilities.
 
 ## Table of Contents
@@ -38,6 +38,8 @@ Before you begin, ensure that you have the following prerequisites installed on 
 
 - [Python](https://www.python.org/) (version 3.8)
 - [Conda](https://conda.io/) (for managing the Conda environment)
+- [Zookeeper](https://zookeeper.apache.org/) (only if a Kafka topic needs to be streamed)
+- [ApacheKafka](https://kafka.apache.org/)
 
 ### Installation
 
