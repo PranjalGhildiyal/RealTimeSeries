@@ -1,6 +1,6 @@
 import pandas as pd
-from RealTimeSeries.configurations.index import read_section
-from RealTimeSeries.src.Logger.AppLogger import Applogger
+from RealTimeSeriesDev.configurations.index import read_section
+from RealTimeSeriesDev.src.Logger.AppLogger import Applogger
 import os
 from io import BytesIO
 import time

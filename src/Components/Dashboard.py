@@ -1,4 +1,4 @@
-from RealTimeSeries.src.Components.ConnectionWidgets import ConnectionWidgets
+from RealTimeSeriesDev.src.Components.ConnectionWidgets import ConnectionWidgets
 import panel as pn
 import pandas as pd
 from holoviews.streams import Pipe, Buffer

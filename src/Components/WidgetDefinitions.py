@@ -1,4 +1,4 @@
-from RealTimeSeries.src.Components.ConfigReader import ConfigReader
+from RealTimeSeriesDev.src.Components.ConfigReader import ConfigReader
 import panel as pn
 import threading
 from matplotlib.colors import LinearSegmentedColormap

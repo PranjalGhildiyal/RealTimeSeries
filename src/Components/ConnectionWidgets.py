@@ -1,7 +1,7 @@
 # Import your custom connector
 try:
-    from RealTimeSeries.src.Components.WidgetDefinitions import WidgetDefinitions
-    from RealTimeSeries.src.Connections import DataBase, Kafka, SystemFiles, url
+    from RealTimeSeriesDev.src.Components.WidgetDefinitions import WidgetDefinitions
+    from RealTimeSeriesDev.src.Connections import DataBase, Kafka, SystemFiles, url
     import panel as pn
     import time
     import holoviews as hv

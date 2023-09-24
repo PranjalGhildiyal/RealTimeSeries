@@ -1,4 +1,4 @@
-from RealTimeSeries.configurations.index import read_section
+from RealTimeSeriesDev.configurations.index import read_section
 
 #===========================================================
 #                         Step 1
