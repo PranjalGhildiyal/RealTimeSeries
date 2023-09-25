@@ -58,7 +58,10 @@ Before you begin, ensure that you have the following prerequisites installed on 
    ```bat
    Realtimeseries.bat
    ```
-This script will create a Conda environment named "PranalGhildiyal_Realtimeseries," install the required dependencies, and launch the RealTimeSeries application.
+This script will create a Conda environment named "PranalGhildiyal_Realtimeseries," install the required dependencies, and launch the RealTimeSeries application. 
+This might take longer than usual on the first go. View the changes on `log.txt` in the log directory to see the progress of installation for the first time.
+
+PLEASE POST ANY ISSUES REGARDING INSTALLATION ON THIS REPOSITORY [`Issues`](https://github.com/PranjalGhildiyal/RealTimeSeries/issues) WITH THE `log.txt` FILE.
 
 ## Usage
 
