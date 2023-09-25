@@ -12,3 +12,4 @@
 
 #Excluding the logs
 /Logs
+/log.txt
