@@ -1,4 +1,4 @@
-FROM python:3.9.12-slim-buster
+FROM python:3.8.17-slim-buster
 COPY . /app
 WORKDIR /app
 RUN pip install --upgrade cython
