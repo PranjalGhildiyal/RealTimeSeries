@@ -1,6 +1,7 @@
 import pandas as pd
 import logging as lg
 import os
+from configurations.index import read_section
 
 
 class Applogger():
@@ -10,10 +11,18 @@ class Applogger():
             - Can be used to log in the directory mentioned in config.ini
         - property: shutdown
             - shuts the connection down to prevent duplicate entries in the log file.'''
-    def __init__(self, log_file_location, timezone = 'Asia/Kolkata'):
-        self.timezone = timezone
-        self.login = pd.to_datetime(pd.Timestamp.now(tz= timezone).strftime('%Y-%m-%d %H:%M:%S'))
+    def __init__(self, log_file_location):
+
+        _, app_info= read_section('INFO')
+        if not _:
+            self.timezone= 'Asia/Kolkata'
+        else:
+            self.timezone= app_info['timezone']
+
+        self.login = pd.to_datetime(pd.Timestamp.now(tz= self.timezone).strftime('%Y-%m-%d %H:%M:%S'))
         self.log_file_location= log_file_location
+        if not os.path.exists('Logs'):
+            os.mkdir('Logs')
 
     @property
     def logger(self):
