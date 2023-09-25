@@ -54,11 +54,11 @@ Before you begin, ensure that you have the following prerequisites installed on 
    ```bash
    cd RealTimeSeries
    ```
-3. Run the provided batch script to set up the Conda environment and start the application:
-   ```bash
-   Realtimeseries.sh
+3. Run the provided batch script to set up the Conda environment and start the application (on cmd):
+   ```bat
+   Realtimeseries.bat
    ```
-This script will create a Conda environment named "RealTimeSeries," install the required dependencies, and launch the RealTimeSeries application.
+This script will create a Conda environment named "PranalGhildiyal_Realtimeseries," install the required dependencies, and launch the RealTimeSeries application.
 
 ## Usage
 
