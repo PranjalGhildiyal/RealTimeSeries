@@ -3,24 +3,24 @@ cd /d %~dp0
 set log_file=log.txt
 
 :: Set the name for the conda environment
-set conda_env_name=real5
+set conda_env_name=PranalGhildiyal_Realtimeseries
 
 :: Activate the conda environment
 call conda activate %conda_env_name%
 
 (
     :: Check if the conda environment exists
-    conda env list | findstr /i "\<%conda_env_name%\>" > nul
+    conda info --envs | findstr /i "\<%conda_env_name%\>" > nul
     if %errorlevel% neq 0 (
         :: Create a new conda environment with Python 3.8
         conda create --name %conda_env_name% python=3.8 -y >> %log_file% 2>&1
+        :: Install dependencies from requirements.txt if not already installed
+        conda activate %conda_env_name%
+        pip install -r requirements.txt >> %log_file% 2>&1
     )
 
     :: Activate the conda environment again to ensure we are working within it
     conda activate %conda_env_name%
-
-    :: Install dependencies from requirements.txt if not already installed
-    pip install -r requirements.txt >> %log_file% 2>&1
 
     :: Run your Python application (app.py)
     python app.py >> %log_file% 2>&1
