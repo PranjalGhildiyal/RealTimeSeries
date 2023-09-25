@@ -13,7 +13,7 @@
         
         - Also, here we define all the callback functions that would be required in this and other child class(es).
     
-    - [**App**](https://github.com/PranjalGhildiyal/RealTimeSeries/blob/production/src/Components/Dashboard.py):
+    - [**Dashboard**](https://github.com/PranjalGhildiyal/RealTimeSeries/blob/production/src/Components/Dashboard.py):
         
         - Defines the final `App` class.
         
