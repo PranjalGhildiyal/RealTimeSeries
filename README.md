@@ -62,6 +62,7 @@ This script will create a Conda environment named "PranalGhildiyal_Realtimeserie
 This might take longer than usual on the first go. View the changes on `log.txt` in the log directory to see the progress of installation for the first time.
 
 PLEASE POST ANY ISSUES REGARDING INSTALLATION ON THIS REPOSITORY [`Issues`](https://github.com/PranjalGhildiyal/RealTimeSeries/issues) WITH THE `log.txt` FILE.
+I will get to you asap.
 
 ## Usage
 
