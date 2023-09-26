@@ -177,7 +177,7 @@ class ConnectionWidgets(WidgetDefinitions):
                                     self.config_widgetbox,
                                     accordion,
                                     pn.Row(self.stop, self.clear),
-                                    pn.Row(self.modelling_status, self.modelling_indicator, sizing_mode= 'stretch_both')
+                                    pn.Row(self.modelling_indicator, sizing_mode= 'stretch_both')
                                 )
 
     # =======================================================================================================================================================
@@ -197,7 +197,7 @@ class ConnectionWidgets(WidgetDefinitions):
         self.data= None
 
 
-    def __change_button_color(widget, button_type=None, button_style=None):
+    def __change_button_color(self, widget, button_type=None, button_style=None):
         if button_type is None:
             button_type=widget.button_type
         if button_style is None:
@@ -310,41 +310,54 @@ class ConnectionWidgets(WidgetDefinitions):
         
         
     def __model_data(self):
-        while self.data.shape[0] < self.training_shape.value:
-            self.modelling_indicator.button_type='light'
-            self.modelling_indicator.button_style= 'outline'
-            if self.stop_flag.is_set():
-                return
         self.modelling_indicator.button_type='success'
         self.modelling_indicator.button_style= 'outline'
-        self.modelling_status.value= True
-        modelling_update= pn.pane.Alert('Modelling Data Now!', alert_type='info')
-        self.data= self.data.dropna()
-        self.template.modal[0].append(pn.Row(self.modelling_status, modelling_update))
 
+        self.template.modal[0].clear()
+        self.template.open_modal()
+        self.modelling_status.value= True
+        self.template.modal[0].append(
+                                        pn.Row(
+                                                pn.layout.HSpacer(),
+                                                self.modelling_status,
+                                                pn.layout.HSpacer()
+                                                )
+                                        )
+
+        modelling_update= pn.pane.Alert('Modelling Data Now!', alert_type='info', sizing_mode= 'stretch_width')
+        self.template.modal[0].append(modelling_update)
+
+        if self.data.shape[0] < self.training_shape.value:
+            self.modelling_indicator.button_type='danger'
+            self.modelling_indicator.button_style= 'outline'
+            modelling_update= pn.pane.Alert('Insufficient number of datapoints. Either change the minimum required datapoints or try again later.')
+            self.modelling_status.value= False
+            self.template.modal[0].append(modelling_update)
+            return
+        
         # Exceptions with datetime conversion
+        data= self.data
         try:
-            self.data['DATETIME'] = pd.to_datetime(self.data['DATETIME'])
+            data['DATETIME'] = pd.to_datetime(data['DATETIME'])
             
         except Exception:
             modelling_update= pn.pane.Alert('DATETIME COLUMN FORMAT ERROR.', alert_type='danger')
             self.modelling_status.value= False
-            self.template.modal[0].pop(-1)
-            self.template.modal[0].append(pn.Row(self.modelling_status, modelling_update))
+            self.template.modal[0].append(modelling_update)
             return
         
+        
         # Exceptions with value column to float conversion
-        self.data['value'] = pd.to_numeric(self.data['value'], errors='coerce')
-        self.data= self.data.dropna()
-        if self.data.shape[0] == 0:
+        data['value'] = pd.to_numeric(data['value'], errors='coerce')
+        data= data.dropna()
+        if data.shape[0] == 0:
             modelling_update= pn.pane.Alert('value COLUMN FORMAT ERROR: No Relevant data found.', alert_type='danger')
             self.modelling_status.value= False
-            self.template.modal[0].pop(-1)
-            self.template.modal[0].append(pn.Row(self.modelling_status, modelling_update))
+            self.template.modal[0].append(modelling_update)
             return
 
-        X= self.data[['DATETIME']]
-        y=self.data['value']
+        X= data[['DATETIME']]
+        y= data['value']
         y_train, y_test, X_train, X_test = model_selection.train_test_split(y, X, train_size=self.training_shape.value)
         date_feat = preprocessing.DateFeaturizer(
                                                     column_name="DATETIME", 
@@ -361,10 +374,11 @@ class ConnectionWidgets(WidgetDefinitions):
                                                             suppress_warnings=True,
                                                             seasonal=False))
                                 ])
-        self.template.modal[0].pop(-1)
+        # self.template.modal[0].pop(-1)
         modelling_update= pn.pane.Alert('Modelling Over!', alert_type='info')
         self.modelling_status.value= False
-        self.template.modal[0].append(pn.Row(self.modelling_status, modelling_update))
+        self.template.modal[0].append(modelling_update)
+        print('Modelling complete!')
 
     def __adjust_format(self, event):
         format__= event.new.split('.')[-1]

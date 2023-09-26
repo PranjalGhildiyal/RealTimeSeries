@@ -18,7 +18,7 @@ class WidgetDefinitions(ConfigReader):
         self.datetime_column_selector= pn.widgets.Select(name= 'Select datetime column')
         self.value_selector= pn.widgets.Select(name= 'Select value column')
         self.connection_status= pn.indicators.LoadingSpinner(value=False, color='primary', bgcolor='dark')
-        self.modelling_status= pn.indicators.LoadingSpinner(value=False, color='primary', bgcolor='dark', size= 20, sizing_mode= 'stretch_both', align='end')
+        self.modelling_status= pn.indicators.LoadingSpinner(value=False, color='primary', bgcolor='dark')
         
 
         # Defining connection status
