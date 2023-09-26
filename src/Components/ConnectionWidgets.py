@@ -167,12 +167,17 @@ class ConnectionWidgets(WidgetDefinitions):
         # # Making a pause button
         # self.playpause= pn.widgets.Button(name='Pause', button_type= 'warning', sizing_mode='stretch_width')
         # self.playpause.on_click(self.__playpause)
+        # Making the modelling indicators:
+        self.modelling_indicator= pn.widgets.Button(name='Model Data', button_type= 'light', button_style='outline', sizing_mode= 'stretch_both')
+        self.modelling_indicator.param.watch(lambda event: self.__change_button_color(self.modelling_indicator, button_type='success', button_style=None), 'value')
+        self.modelling_indicator.param.watch(lambda event: self.__model_data(), 'value')
 
         # Now finally making a sidebar
         self.sidebar= pn.Column(
                                     self.config_widgetbox,
                                     accordion,
-                                    pn.Row(self.stop, self.clear)
+                                    pn.Row(self.stop, self.clear),
+                                    pn.Row(self.modelling_status, self.modelling_indicator, sizing_mode= 'stretch_both')
                                 )
 
     # =======================================================================================================================================================
@@ -192,7 +197,16 @@ class ConnectionWidgets(WidgetDefinitions):
         self.data= None
 
 
-    def __change_button_color(widget):
+    def __change_button_color(widget, button_type=None, button_style=None):
+        if button_type is None:
+            button_type=widget.button_type
+        if button_style is None:
+            button_style=widget.button_style
+        
+        widget.button_type= button_type
+        widget.button_style= button_style
+        
+
         widget.button_type= 'danger'
 
     def catch_value(self):
@@ -228,14 +242,14 @@ class ConnectionWidgets(WidgetDefinitions):
                                         )
         )
         self.template.open_modal()
-        self.connection= connection(*[param.value for param in params])
+        self.connection= connection(*[param.value if hasattr(param, 'value') else param for param in params])
 
     def __connect(self, params):
-        self.connect_status= self.connection.connect(*[param.value for param in params])
+        self.connect_status= self.connection.connect(*[param.value if hasattr(param, 'value') else param for param in params])
 
 
     def __get_schema(self, params):
-        self.get_schema_status, schema= self.connection.get_schema(*[param.value for param in params])
+        self.get_schema_status, schema= self.connection.get_schema(*[param.value if hasattr(param, 'value') else param for param in params])
         return schema
     
     def __display_modal(self, schema, import_data_params):
@@ -297,10 +311,12 @@ class ConnectionWidgets(WidgetDefinitions):
         
     def __model_data(self):
         while self.data.shape[0] < self.training_shape.value:
+            self.modelling_indicator.button_type='light'
+            self.modelling_indicator.button_style= 'outline'
             if self.stop_flag.is_set():
                 return
-            pass
-
+        self.modelling_indicator.button_type='success'
+        self.modelling_indicator.button_style= 'outline'
         self.modelling_status.value= True
         modelling_update= pn.pane.Alert('Modelling Data Now!', alert_type='info')
         self.data= self.data.dropna()

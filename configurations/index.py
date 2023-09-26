@@ -4,7 +4,7 @@ def read_section(section:str)->tuple:
     status= False
     try:
         config = configparser.ConfigParser()
-        config.read(r'RealTimeSeries/configurations/config_file.ini')
+        config.read(r'RealTimeSeriesDev/configurations/config_file.ini')
         config_sections  = config.sections()
         if section not in config_sections:
             return(status,"No such config found.")

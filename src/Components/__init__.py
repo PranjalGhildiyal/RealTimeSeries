@@ -1,1 +1,1 @@
-from Dashboard import Dashboard as app
+from .Dashboard import Dashboard 
