@@ -1,7 +1,6 @@
 from RealTimeSeriesDev.src.Components.ConnectionWidgets import ConnectionWidgets
 import panel as pn
 import pandas as pd
-from holoviews.streams import Pipe, Buffer
 import holoviews as hv
 from bokeh.themes import built_in_themes
 from holoviews import opts
@@ -33,12 +32,13 @@ class Dashboard(ConnectionWidgets):
         #             )
 
         # Adding components for main here
-        example = pd.DataFrame({'DATETIME': [], 'value': []}, columns=['DATETIME', 'value'])
-        self.dfstream = Buffer(example, length=self.n_indexes.value, index=False)
-        lower_dashboard_dmap = pn.panel(hv.DynamicMap(self.curve_update, streams=[self.dfstream]),sizing_mode='stretch_both')
+        actual_stream= hv.DynamicMap(self.actual_update, streams=[self.dfstream])
+        pred_stream= hv.DynamicMap(self.predicted_update, streams= [self.predstream])
+
+        lower_dashboard_dmap = pn.panel((actual_stream * pred_stream), sizing_mode='stretch_both')
         histogram_dmap= pn.panel(hv.DynamicMap(self.hist_callback, streams=[self.dfstream]).opts(shared_axes=False),sizing_mode='stretch_both')
         hist_dmap= pn.panel(hv.DynamicMap(self.gradient_pie, streams=[self.dfstream]).opts(shared_axes=False),sizing_mode='stretch_both')
-        box_dmap= pn.panel(hv.DynamicMap(self.boxplot, streams=[self.dfstream]),sizing_mode='stretch_both')
+        box_dmap= pn.panel(hv.DynamicMap(self.boxplot, streams=[self.dfstream]).opts(shared_axes=False),sizing_mode='stretch_both')
         print('Done till here!')
 
         # Making a new lower-dashboard

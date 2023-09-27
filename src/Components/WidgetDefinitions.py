@@ -3,6 +3,8 @@ import panel as pn
 import threading
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.pyplot as plt
+import pandas as pd
+from holoviews.streams import Buffer
         
 #===========================================================
 #                         Step 2
@@ -53,3 +55,12 @@ class WidgetDefinitions(ConfigReader):
         
         # Defining data for the first time
         self.data= None
+        self.model= None
+        self.modelling_last_date= None
+        self.modelling_granularity= None
+
+        # Data Stream definitions
+        example = pd.DataFrame({'DATETIME': [], 'value': []}, columns=['DATETIME', 'value'])
+        example1 = pd.DataFrame({'DATETIME': [], 'value': []}, columns=['DATETIME', 'value'])
+        self.dfstream = Buffer(example, length=self.n_indexes.value, index=False)
+        self.predstream= Buffer(example1, length=self.n_indexes.value, index=False)

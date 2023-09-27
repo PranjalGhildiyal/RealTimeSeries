@@ -1,20 +1,18 @@
 # Import your custom connector
-try:
-    from RealTimeSeriesDev.src.Components.WidgetDefinitions import WidgetDefinitions
-    from RealTimeSeriesDev.src.Connections import DataBase, Kafka, SystemFiles, url
-    import panel as pn
-    import time
-    import holoviews as hv
-    import pandas as pd
-    from pmdarima import arima
-    from pmdarima import model_selection
-    from pmdarima import pipeline
-    from pmdarima import preprocessing
-    from holoviews import opts
-    import threading
-    import asyncio
-except ImportError as import_error:
-    print(f'Could not import module: {import_error}.')
+from RealTimeSeriesDev.src.Components.WidgetDefinitions import WidgetDefinitions
+from RealTimeSeriesDev.src.Connections import DataBase, Kafka, SystemFiles, url
+import panel as pn
+import time
+import holoviews as hv
+import pandas as pd
+from pmdarima import arima
+from pmdarima import model_selection
+from pmdarima import pipeline
+from pmdarima import preprocessing
+from holoviews import opts
+import threading
+import asyncio
+
 
 #===========================================================
 #                         Step 3
@@ -182,7 +180,7 @@ class ConnectionWidgets(WidgetDefinitions):
 
     # =======================================================================================================================================================
     #                                                            Now defining watcher functions
-    #                                                         Add your own watcher functions here
+    #                                                         Add your own watcher functions below
     # =======================================================================================================================================================
 
     def __STOP(self, event=None):
@@ -192,6 +190,7 @@ class ConnectionWidgets(WidgetDefinitions):
 
     def __CLEAR(self, event=None):
         self.dfstream.clear()
+        self.predstream.clear()
         self.gauge.bounds= (0, 100)
         self.gauge.value= 50
         self.data= None
@@ -224,11 +223,18 @@ class ConnectionWidgets(WidgetDefinitions):
             if self.stop_flag.is_set():
                 break 
             self.dfstream.send(mframe)
+            # Streaming predictions
+            if not(self.model is None):
+                self.send_predictions(mframe)
             if self.stop_flag.is_set():
                 break 
         # return (not self.stop.value)
 
         # self.update_dashboard()
+    
+    def send_predictions(self, mframe):
+        mframe['value'] += 1000
+        self.predstream.send(mframe)
 
     def __init_connection(self, button, connection, params):
         button.button_type= 'success'
@@ -384,10 +390,18 @@ class ConnectionWidgets(WidgetDefinitions):
         format__= event.new.split('.')[-1]
         self.format.value= format__
 
-    def curve_update(self, data):
+    def actual_update(self, data):
         
         data['DATETIME'] = pd.to_datetime(data['DATETIME'])
         curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(line_width=1, color='lightblue', show_grid=True, responsive=True, gridstyle= {'grid_line_color': '#2596be'})#, width=1300, height= 700)
+        return (curve).opts(
+                            opts.Curve(line_width=2)
+                            )
+    
+    def predicted_update(self, data):
+        
+        data['DATETIME'] = pd.to_datetime(data['DATETIME'])
+        curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(responsive=True, color='orange')#, width=1300, height= 700)
         return (curve).opts(
                             opts.Curve(line_width=2)
                             )
