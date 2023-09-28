@@ -168,7 +168,7 @@ class ConnectionWidgets(WidgetDefinitions):
         # Making the modelling indicators:
         self.modelling_indicator= pn.widgets.Button(name='Model Data', button_type= 'light', button_style='outline', sizing_mode= 'stretch_both')
         # self.modelling_indicator.param.watch(lambda event: self.__change_button_color(self.modelling_indicator, button_type='success', button_style=None), 'value')
-        self.modelling_indicator.param.watch(lambda event: self.__model_data(), 'value')
+        self.modelling_indicator.param.watch(lambda event: threading.Thread(self.__model_data()), 'value')
 
         # Now finally making a sidebar
         self.sidebar= pn.Column(
@@ -229,9 +229,6 @@ class ConnectionWidgets(WidgetDefinitions):
             if self.stop_flag.is_set():
                 break 
 
-        # return (not self.stop.value)
-
-        # self.update_dashboard()
     
     def send_predictions(self, mframe):
 
@@ -241,6 +238,7 @@ class ConnectionWidgets(WidgetDefinitions):
         range_max= nth_step_prediction[1][0][1]
         pred_frame = pd.DataFrame({'DATETIME': list(mframe['DATETIME'].values)[0], 'value': pred, 'max': range_max, 'min': range_min})
         self.predstream.send(pred_frame)
+        self.model.update(mframe['value'], mframe[['DATETIME']])
 
     def __init_connection(self, button, connection, params):
         button.button_type= 'success'
@@ -386,7 +384,7 @@ class ConnectionWidgets(WidgetDefinitions):
                                                             suppress_warnings=True,
                                                             seasonal=False))
                                 ])
-        # self.template.modal[0].pop(-1)
+        
         model.fit(y, X)
         modelling_update= pn.pane.Alert('Modelling Over!', alert_type='info')
         self.modelling_status.value= False
