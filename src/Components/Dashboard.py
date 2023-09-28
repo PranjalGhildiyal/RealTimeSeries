@@ -12,7 +12,7 @@ class Dashboard(ConnectionWidgets):
         super().__init__() 
         print('in Dashboard')
         hv.extension('bokeh')
-        pn.extension('plotly')
+        pn.extension('plotly', nthreads=0)
         theme = built_in_themes["dark_minimal"]
         hv.renderer('bokeh').theme = theme
 

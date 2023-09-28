@@ -167,7 +167,7 @@ class ConnectionWidgets(WidgetDefinitions):
         # self.playpause.on_click(self.__playpause)
         # Making the modelling indicators:
         self.modelling_indicator= pn.widgets.Button(name='Model Data', button_type= 'light', button_style='outline', sizing_mode= 'stretch_both')
-        self.modelling_indicator.param.watch(lambda event: self.__change_button_color(self.modelling_indicator, button_type='success', button_style=None), 'value')
+        # self.modelling_indicator.param.watch(lambda event: self.__change_button_color(self.modelling_indicator, button_type='success', button_style=None), 'value')
         self.modelling_indicator.param.watch(lambda event: self.__model_data(), 'value')
 
         # Now finally making a sidebar
@@ -204,37 +204,43 @@ class ConnectionWidgets(WidgetDefinitions):
         
         widget.button_type= button_type
         widget.button_style= button_style
-        
-
-        widget.button_type= 'danger'
 
     def catch_value(self):
         if self.data is None:
             self.data= pd.DataFrame()
-            self.sidebar[0][0][1][1].disable= True
         for mframe in self.consumer_object:
             if self.stop_flag.is_set():
                 break 
             self.data= pd.concat([self.data, mframe], ignore_index=True)
-            time.sleep(0.1)  # Add a small sleep interval (e.g., 0.1 seconds)
+            
+            time.sleep(0.1)
+
             if self.stop_flag.is_set():
                 break 
             self.gauge_callback()
             if self.stop_flag.is_set():
                 break 
             self.dfstream.send(mframe)
+            if self.stop_flag.is_set():
+                break 
             # Streaming predictions
-            if not(self.model is None):
+            if self.modelled_yet:
                 self.send_predictions(mframe)
             if self.stop_flag.is_set():
                 break 
+
         # return (not self.stop.value)
 
         # self.update_dashboard()
     
     def send_predictions(self, mframe):
-        mframe['value'] += 1000
-        self.predstream.send(mframe)
+
+        nth_step_prediction= self.model.predict(X=mframe, return_conf_int=True)
+        pred= nth_step_prediction[0]
+        range_min= nth_step_prediction[1][0][0]
+        range_max= nth_step_prediction[1][0][1]
+        pred_frame = pd.DataFrame({'DATETIME': list(mframe['DATETIME'].values)[0], 'value': pred, 'max': range_max, 'min': range_min})
+        self.predstream.send(pred_frame)
 
     def __init_connection(self, button, connection, params):
         button.button_type= 'success'
@@ -320,6 +326,7 @@ class ConnectionWidgets(WidgetDefinitions):
         self.modelling_indicator.button_style= 'outline'
 
         self.template.modal[0].clear()
+        print('Opening modal')
         self.template.open_modal()
         self.modelling_status.value= True
         self.template.modal[0].append(
@@ -364,15 +371,14 @@ class ConnectionWidgets(WidgetDefinitions):
 
         X= data[['DATETIME']]
         y= data['value']
-        y_train, y_test, X_train, X_test = model_selection.train_test_split(y, X, train_size=self.training_shape.value)
+
         date_feat = preprocessing.DateFeaturizer(
                                                     column_name="DATETIME", 
                                                     with_day_of_week=True,
                                                     with_day_of_month=True
                                                 )
-        n_diffs = arima.ndiffs(y_train, max_d=5)
-        _, X_train_feats = date_feat.fit_transform(y_train, X_train)
-        self.model = pipeline.Pipeline([
+        n_diffs = arima.ndiffs(y, max_d=5)
+        model = pipeline.Pipeline([
                                     ('DATETIME', date_feat),
                                     ('arima', arima.AutoARIMA(d=n_diffs,
                                                             trace=3,
@@ -381,17 +387,20 @@ class ConnectionWidgets(WidgetDefinitions):
                                                             seasonal=False))
                                 ])
         # self.template.modal[0].pop(-1)
+        model.fit(y, X)
         modelling_update= pn.pane.Alert('Modelling Over!', alert_type='info')
         self.modelling_status.value= False
         self.template.modal[0].append(modelling_update)
+        
         print('Modelling complete!')
+        self.model= model
+        self.modelled_yet= True
 
     def __adjust_format(self, event):
         format__= event.new.split('.')[-1]
         self.format.value= format__
 
     def actual_update(self, data):
-        
         data['DATETIME'] = pd.to_datetime(data['DATETIME'])
         curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(line_width=1, color='lightblue', show_grid=True, responsive=True, gridstyle= {'grid_line_color': '#2596be'})#, width=1300, height= 700)
         return (curve).opts(
@@ -399,20 +408,13 @@ class ConnectionWidgets(WidgetDefinitions):
                             )
     
     def predicted_update(self, data):
-        
         data['DATETIME'] = pd.to_datetime(data['DATETIME'])
         curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(responsive=True, color='orange')#, width=1300, height= 700)
-        return (curve).opts(
+        area = hv.Area(data, vdims=['max', 'min'], kdims=['DATETIME']).opts(alpha=0.2, color='cyan')
+        return (curve * area).opts(
                             opts.Curve(line_width=2)
                             )
-    
-    # def curve_update(self, data):
-    #     curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(line_width=1, color='lightblue', width=1000, show_grid=True)
-    #     points = hv.Points(data, kdims=['DATETIME', 'value'], vdims=['value']).opts(color='color', cmap='viridis', padding=0.1, width=1000, marker='o')
-    #     return (curve * points).opts(
-    #                                 opts.Points(line_color='blue', size=5, padding=0.1),
-    #                                 opts.Curve(line_width=2, color='lightblue')
-    #                                 )
+
 
     def hist_callback(self, data=None):
         # Convert 'DATETIME' column to datetime type
