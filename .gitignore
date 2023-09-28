@@ -6,6 +6,9 @@
 /src/Connections/__pycache__/
 /src/Logger/__pycache__/
 /configurations/__pycache__/
+/src/Components/__pycache__/
+/src/CustomModels/__pycache__/
+/src/Exceptions/__pycache__/
 
 # Excluding current config_file.ini
 /configurations/config_file.ini
