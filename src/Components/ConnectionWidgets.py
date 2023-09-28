@@ -1,6 +1,7 @@
 # Import your custom connector
 from RealTimeSeriesDev.src.Components.WidgetDefinitions import WidgetDefinitions
 from RealTimeSeriesDev.src.Connections import DataBase, Kafka, SystemFiles, url
+from RealTimeSeriesDev.src.CustomModels.Model import ModelDetails
 import panel as pn
 import time
 import holoviews as hv
@@ -165,17 +166,21 @@ class ConnectionWidgets(WidgetDefinitions):
         # # Making a pause button
         # self.playpause= pn.widgets.Button(name='Pause', button_type= 'warning', sizing_mode='stretch_width')
         # self.playpause.on_click(self.__playpause)
-        # Making the modelling indicators:
+
+        # Making the modelling widget:
+        self.model_selector= pn.widgets.Select(name='Select Model Type', options= [None] + self.inquiry.available_models, value=None)
         self.modelling_indicator= pn.widgets.Button(name='Model Data', button_type= 'light', button_style='outline', sizing_mode= 'stretch_both')
         # self.modelling_indicator.param.watch(lambda event: self.__change_button_color(self.modelling_indicator, button_type='success', button_style=None), 'value')
-        self.modelling_indicator.param.watch(lambda event: threading.Thread(self.__model_data()), 'value')
+        self.modelling_indicator.param.watch(lambda event: self.model_data_trigger(), 'value')
 
+        widgetbox= pn.WidgetBox(pn.Column(pn.Row(self.model_selector, self.modelling_indicator)), sizing_mode= 'stretch_width')
         # Now finally making a sidebar
         self.sidebar= pn.Column(
                                     self.config_widgetbox,
+                                    widgetbox,
                                     accordion,
                                     pn.Row(self.stop, self.clear),
-                                    pn.Row(self.modelling_indicator, sizing_mode= 'stretch_both')
+                                    sizing_mode='stretch_width'
                                 )
 
     # =======================================================================================================================================================
@@ -194,6 +199,12 @@ class ConnectionWidgets(WidgetDefinitions):
         self.gauge.bounds= (0, 100)
         self.gauge.value= 50
         self.data= None
+    
+    def model_data_trigger(self):
+        self.modelling_thread= threading.Thread(target=self.__model_data)
+        self.modelling_thread.daemon = True
+        self.modelling_thread.start()
+
 
 
     def __change_button_color(self, widget, button_type=None, button_style=None):
@@ -232,12 +243,15 @@ class ConnectionWidgets(WidgetDefinitions):
     
     def send_predictions(self, mframe):
 
-        nth_step_prediction= self.model.predict(X=mframe, return_conf_int=True)
+        nth_step_prediction= self.model.predict(X=mframe[['DATETIME']], return_conf_int=True)
         pred= nth_step_prediction[0]
         range_min= nth_step_prediction[1][0][0]
         range_max= nth_step_prediction[1][0][1]
         pred_frame = pd.DataFrame({'DATETIME': list(mframe['DATETIME'].values)[0], 'value': pred, 'max': range_max, 'min': range_min})
         self.predstream.send(pred_frame)
+        self.__update_model(mframe)
+    
+    def __update_model(self, mframe):
         self.model.update(mframe['value'], mframe[['DATETIME']])
 
     def __init_connection(self, button, connection, params):
@@ -305,6 +319,7 @@ class ConnectionWidgets(WidgetDefinitions):
             self.connection_status.value= False
             self.stop_flag.clear()  # Ensure the flag is initially cleared
             self.loop_thread = threading.Thread(target=self.catch_value)
+            self.loop_thread.daemon= True
             self.loop_thread.start()
             self.template.close_modal()
             # self.__model_data()
@@ -370,20 +385,24 @@ class ConnectionWidgets(WidgetDefinitions):
         X= data[['DATETIME']]
         y= data['value']
 
-        date_feat = preprocessing.DateFeaturizer(
-                                                    column_name="DATETIME", 
-                                                    with_day_of_week=True,
-                                                    with_day_of_month=True
-                                                )
-        n_diffs = arima.ndiffs(y, max_d=5)
-        model = pipeline.Pipeline([
-                                    ('DATETIME', date_feat),
-                                    ('arima', arima.AutoARIMA(d=n_diffs,
-                                                            trace=3,
-                                                            stepwise=True,
-                                                            suppress_warnings=True,
-                                                            seasonal=False))
-                                ])
+
+        model= ModelDetails(self.model_selector.value).model
+        self.model_selector.value= None
+
+        # date_feat = preprocessing.DateFeaturizer(
+        #                                             column_name="DATETIME", 
+        #                                             with_day_of_week=True,
+        #                                             with_day_of_month=True
+        #                                         )
+        # n_diffs = arima.ndiffs(y, max_d=5)
+        # model = pipeline.Pipeline([
+        #                             ('DATETIME', date_feat),
+        #                             ('arima', arima.AutoARIMA(d=n_diffs,
+        #                                                     trace=3,
+        #                                                     stepwise=True,
+        #                                                     suppress_warnings=True,
+        #                                                     seasonal=False))
+        #                         ])
         
         model.fit(y, X)
         modelling_update= pn.pane.Alert('Modelling Over!', alert_type='info')
