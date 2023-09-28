@@ -12,19 +12,18 @@ class Connection:
         if not status:
             print('Could not find section. {}'.format(logging_location))
             return None
-        global lg
-        global logger
-        logger= Applogger(logging_location['kafka'])
-        lg= logger.logger
+        
+        self.logger= Applogger(logging_location['kafka'])
+        self.lg= self.logger.logger
         self.__connection_status = False
         self.__import_status = False
         status, self.configs = read_section('KAFKA')
         if not status:
             print('Could not find section: KAFKA')
-            lg.error('Could not find section: KAFKA')
+            self.lg.error('Could not find section: KAFKA')
             return None
 
-        lg.info('Initiating Connection with Kafka.')
+        self.lg.info('Initiating Connection with Kafka.')
 
     def connect(self, broker, topic):
 
@@ -34,13 +33,13 @@ class Connection:
                 bootstrap_servers=[broker],
                 value_deserializer=Connection.deserializer
             )
-            lg.info(f'Connected to Kafka topic: {topic}')
+            self.lg.info(f'Connected to Kafka topic: {topic}')
             self.topic= topic
             self.__connection_status = True
             return self.__connection_status
         
         except Exception as e:
-            lg.error(f'Failed to connect to Kafka: {str(e)}')
+            self.lg.error(f'Failed to connect to Kafka: {str(e)}')
             return self.__connection_status
 
     def get_schema(self):
@@ -52,11 +51,11 @@ class Connection:
                     all_keys= Connection.flatten_nested_dictionary_keys(message.value)
                     return (status, all_keys)
             except Exception as e:
-                lg.error('Error while trying to get schema!')
+                self.lg.error('Error while trying to get schema!')
                 status= False
                 return (status, 'Error while trying to get schema!')
         else:
-            lg.error('No Connections found!')
+            self.lg.error('No Connections found!')
             return (status, 'No Connections found!')
 
     def import_data(self, datetime_column, value_column, update_callback):
@@ -73,21 +72,21 @@ class Connection:
                     # if not status:
                     #     return self.__import_status
             except Exception as e:
-                lg.error(f'Error while consuming messages: {str(e)}')
+                self.lg.error(f'Error while consuming messages: {str(e)}')
         else:
-            lg.warning('Not connected to Kafka. Call connect() first.')
+            self.lg.warning('Not connected to Kafka. Call connect() first.')
     
     def shutdown(self):
-        logger.shutdown()
+        self.logger.shutdown()
 
     def disconnect(self):
         if self.__connection_status:
             self.consumer.close()
-            lg.info('Disconnected from Kafka.')
+            self.lg.info('Disconnected from Kafka.')
             self.__connection_status = False
             self.__import_status= False
         else:
-            lg.warning('Not connected to Kafka.')
+            self.lg.warning('Not connected to Kafka.')
 
 
     @staticmethod

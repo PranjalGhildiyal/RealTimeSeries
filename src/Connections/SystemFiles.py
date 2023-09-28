@@ -11,11 +11,10 @@ class Connection:
         if not status:
             print('Could not find section. {}'.format(logging_location))
             return None
-        global lg
-        global logger
-        logger= Applogger(logging_location['filesystem'])
-        lg= logger.logger
-        lg.info('Initiated File Import.')
+        
+        self.logger= Applogger(logging_location['filesystem'])
+        self.lg= self.logger.logger
+        self.lg.info('Initiated File Import.')
 
     def connect(self, path, format, sheet_name, separator):
         '''
@@ -29,24 +28,24 @@ class Connection:
             self.file= BytesIO(path)
             print(self.file)
             status= True
-            lg.info('Connected to file path!')
+            self.lg.info('Connected to file path!')
             return status
         except Exception as e:
-            lg.error(f'Error while connecting to filesystem. Error message: {str(e)}')
+            self.lg.error(f'Error while connecting to filesystem. Error message: {str(e)}')
             return status
         
     def get_schema(self):
         status= False
         if self.format == 'xlsx':
             data= pd.read_excel(self.file, nrows=1, header= None).loc[0]
-            lg.info('Schema imported successfully!')
+            self.lg.info('Schema imported successfully!')
             status= True
             return (status, list(data.values))
         elif self.format == 'csv':
             data= pd.read_csv(self.file, nrows=1, header= None).loc[0]
             # Resetting the bytes object cursor to 0th position
             self.file.seek(0)
-            lg.info('Schema imported successfully!')
+            self.lg.info('Schema imported successfully!')
             status= True
             return (status, list(data.values))
 
@@ -59,7 +58,7 @@ class Connection:
             else:
                 data = pd.read_excel(self.file, usecols=[timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column:  'value'})
             status= True
-            lg.info('Data imported successfully!')
+            self.lg.info('Data imported successfully!')
             for i in data.index:
                 yield pd.DataFrame(data.loc[i]).T
         
@@ -70,12 +69,12 @@ class Connection:
             else:
                 data= pd.read_csv(self.file, usecols=[timestamp_column, value_column]).rename(columns={timestamp_column: 'DATETIME', value_column: 'value'})
             status= True
-            lg.info('Data imported successfully!')
+            self.lg.info('Data imported successfully!')
             for i in data.index:
                 yield pd.DataFrame(data.loc[i]).T
         
     def shutdown(self):
-        logger.shutdown()
+        self.logger.shutdown()
 
     @property
     def bytes_obj(self):

@@ -14,14 +14,13 @@ class Connection:
         if not status:
             print('Could not find section. {}'.format(logging_location))
             return None
-        global lg
-        global logger
-        logger= Applogger(logging_location['url'])
-        lg= logger.logger
+        
+        self.logger= Applogger(logging_location['url'])
+        self.lg= self.logger.logger
         self.__import_status = False
         self.data= None
 
-        lg.info('Initiating Connection with Kafka.')
+        self.lg.info('Initiating Connection with Kafka.')
 
     def connect(self):
         try:
@@ -31,11 +30,11 @@ class Connection:
             # Check if the request was successful (status code 200 indicates success)
             if response.status_code == 200:
                 self.__connection_status = True
-                lg.info('Connection test successful.')
+                self.lg.info('Connection test successful.')
             else:
-                lg.warning(f'Connection test failed. Status code: {response.status_code}')
+                self.lg.warning(f'Connection test failed. Status code: {response.status_code}')
         except Exception as e:
-            lg.error(f'Error testing connection: {str(e)}')
+            self.lg.error(f'Error testing connection: {str(e)}')
 
         return self.__connection_status
         
@@ -52,20 +51,20 @@ class Connection:
                     self.data = response.content
                     data_str = self.data.decode('utf-8')
                     self.data = pd.read_csv(io.StringIO(data_str))
-                    lg.info('Data downloaded successfully.')
+                    self.lg.info('Data downloaded successfully.')
                     status= True
                     return (status, list(self.data.columns))
                 except Exception as e:
                     self.data = None
-                    lg.warning(f'Failed to convert data to readable dataframe.')
+                    self.lg.warning(f'Failed to convert data to readable dataframe.')
                     return (status, f'Failed to convert data to readable dataframe.')
 
             else:
-                 lg.error(f'Failed to get data. Status code: {response.status_code}')
+                 self.lg.error(f'Failed to get data. Status code: {response.status_code}')
                  return (status, f'Failed to get data. Status code: {response.status_code}')
                  
         except Exception as e:
-            lg.error(f'Error downloading data: {str(e)}')
+            self.lg.error(f'Error downloading data: {str(e)}')
             return (status, f'Error downloading data: {str(e)}')
 
     def import_data(self, timestamp_column, value_column, callback):
@@ -76,8 +75,8 @@ class Connection:
             for i in self.data.index:
                 yield pd.DataFrame(self.data.loc[i]).T
         else:
-            lg.error('No data available to convert to DataFrame.')
+            self.lg.error('No data available to convert to DataFrame.')
             return (status, 'No data available to convert to DataFrame.')
 
     def shutdown(self):
-        logger.shutdown()
+        self.logger.shutdown()
