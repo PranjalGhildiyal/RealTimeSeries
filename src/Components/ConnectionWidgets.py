@@ -173,11 +173,11 @@ class ConnectionWidgets(WidgetDefinitions):
         # self.modelling_indicator.param.watch(lambda event: self.__change_button_color(self.modelling_indicator, button_type='success', button_style=None), 'value')
         self.modelling_indicator.param.watch(lambda event: self.model_data_trigger(), 'value')
 
-        widgetbox= pn.WidgetBox(pn.Column(pn.Row(self.model_selector, self.modelling_indicator)), sizing_mode= 'stretch_width')
         # Now finally making a sidebar
         self.sidebar= pn.Column(
                                     self.config_widgetbox,
-                                    widgetbox,
+                                    self.model_selector,
+                                    self.modelling_indicator,
                                     accordion,
                                     pn.Row(self.stop, self.clear),
                                     sizing_mode='stretch_width'
@@ -242,7 +242,6 @@ class ConnectionWidgets(WidgetDefinitions):
 
     
     def send_predictions(self, mframe):
-
         nth_step_prediction= self.model.predict(X=mframe[['DATETIME']], return_conf_int=True)
         pred= nth_step_prediction[0]
         range_min= nth_step_prediction[1][0][0]
@@ -357,6 +356,13 @@ class ConnectionWidgets(WidgetDefinitions):
             self.modelling_indicator.button_type='danger'
             self.modelling_indicator.button_style= 'outline'
             modelling_update= pn.pane.Alert('Insufficient number of datapoints. Either change the minimum required datapoints or try again later.')
+            self.modelling_status.value= False
+            self.template.modal[0].append(modelling_update)
+            return
+        if self.model_selector.value is None:
+            self.modelling_indicator.button_type='danger'
+            self.modelling_indicator.button_style= 'outline'
+            modelling_update= pn.pane.Alert('Select a valid model type for forecasting. Selected value: {}.'.format(self.model_selector.value))
             self.modelling_status.value= False
             self.template.modal[0].append(modelling_update)
             return
