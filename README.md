@@ -43,7 +43,7 @@ Before you begin, ensure that you have the following prerequisites installed on 
 - [Zookeeper](https://zookeeper.apache.org/) (only if a Kafka topic needs to be streamed)
 - [ApacheKafka](https://kafka.apache.org/)
 
-### Installation
+### Installation in 3 easy steps!
 
 1. Clone the RealTimeSeries repository to your local machine:
 
@@ -58,8 +58,11 @@ Before you begin, ensure that you have the following prerequisites installed on 
    ```bat
    Realtimeseries.bat
    ```
-This script will create a Conda environment named "PranalGhildiyal_Realtimeseries," install the required dependencies, and launch the RealTimeSeries application. 
+   This step would be required anytime you want to view the app.
+   
+This script will create a Conda environment named "PranalGhildiyal_Realtimeseries", install the required dependencies, and launch the RealTimeSeries application. 
 This might take longer than usual on the first go. View the changes on `log.txt` in the log directory to see the progress of installation for the first time.
+
 
 PLEASE POST ANY ISSUES RELATED TO INSTALLATION ON THIS REPOSITORY [`Issues`](https://github.com/PranjalGhildiyal/RealTimeSeries/issues) WITH THE `log.txt` FILE.
 I will get to you asap.
