@@ -61,5 +61,7 @@ class WidgetDefinitions(ConfigReader):
         # Data Stream definitions
         example = pd.DataFrame({'DATETIME': [], 'value': []}, columns=['DATETIME', 'value'])
         example1 = pd.DataFrame({'DATETIME': [], 'value': [], 'max': [], 'min': []}, columns=['DATETIME', 'value', 'max', 'min'])
+        example2 = pd.DataFrame({'FUTURE': [], 'value': [], 'max': [], 'min': []}, columns=['FUTURE', 'value', 'max', 'min'])
         self.dfstream = Buffer(example, length=self.n_indexes.value, index=False)
         self.predstream= Buffer(example1, length=self.n_indexes.value, index=False)
+        self.forecaststream= Buffer(example2, length=self.feature_shape.value, index=False)

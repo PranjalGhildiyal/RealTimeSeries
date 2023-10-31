@@ -191,6 +191,7 @@ class ConnectionWidgets(WidgetDefinitions):
     def __STOP(self, event=None):
         self.stop_flag.set()
         print('STOPPED!')
+        self.model= None
         
 
     def __CLEAR(self, event=None):
@@ -199,6 +200,7 @@ class ConnectionWidgets(WidgetDefinitions):
         self.gauge.bounds= (0, 100)
         self.gauge.value= 50
         self.data= None
+        self.modelled_yet= False
     
     def model_data_trigger(self):
         self.modelling_thread= threading.Thread(target=self.__model_data)
@@ -228,7 +230,7 @@ class ConnectionWidgets(WidgetDefinitions):
 
             if self.stop_flag.is_set():
                 break 
-            self.gauge_callback()
+            self.gauge_callback(mframe)
             if self.stop_flag.is_set():
                 break 
             self.dfstream.send(mframe)
@@ -240,7 +242,6 @@ class ConnectionWidgets(WidgetDefinitions):
             if self.stop_flag.is_set():
                 break 
 
-    
     def send_predictions(self, mframe):
         nth_step_prediction= self.model.predict(X=mframe[['DATETIME']], return_conf_int=True)
         pred= nth_step_prediction[0]
@@ -248,6 +249,10 @@ class ConnectionWidgets(WidgetDefinitions):
         range_max= nth_step_prediction[1][0][1]
         pred_frame = pd.DataFrame({'DATETIME': list(mframe['DATETIME'].values)[0], 'value': pred, 'max': range_max, 'min': range_min})
         self.predstream.send(pred_frame)
+        time_range = pd.date_range(start=list(mframe['DATETIME'].values)[-1], periods=(self.feature_shape.value + 1), freq=f'{self.data_freq}S')[1:]
+        forecasts= self.model.predict(X=pd.DataFrame({'DATETIME': time_range}), return_conf_int=True)
+        forecast_frame = pd.DataFrame({'FUTURE': time_range, 'value': forecasts[0], 'max': forecasts[1][:, 1], 'min': forecasts[1][:, 0]})
+        self.forecaststream.send(forecast_frame)
         self.__update_model(mframe)
     
     def __update_model(self, mframe):
@@ -330,9 +335,7 @@ class ConnectionWidgets(WidgetDefinitions):
             time.sleep(2)
             self.template.close_modal()
             return
-        
-        
-        
+
     def __model_data(self):
         self.modelling_indicator.button_type='success'
         self.modelling_indicator.button_style= 'outline'
@@ -391,24 +394,8 @@ class ConnectionWidgets(WidgetDefinitions):
         X= data[['DATETIME']]
         y= data['value']
 
-
         model= ModelDetails(self.model_selector.value).model
         self.model_selector.value= None
-
-        # date_feat = preprocessing.DateFeaturizer(
-        #                                             column_name="DATETIME", 
-        #                                             with_day_of_week=True,
-        #                                             with_day_of_month=True
-        #                                         )
-        # n_diffs = arima.ndiffs(y, max_d=5)
-        # model = pipeline.Pipeline([
-        #                             ('DATETIME', date_feat),
-        #                             ('arima', arima.AutoARIMA(d=n_diffs,
-        #                                                     trace=3,
-        #                                                     stepwise=True,
-        #                                                     suppress_warnings=True,
-        #                                                     seasonal=False))
-        #                         ])
         
         model.fit(y, X)
         modelling_update= pn.pane.Alert('Modelling Over!', alert_type='info')
@@ -418,6 +405,7 @@ class ConnectionWidgets(WidgetDefinitions):
         print('Modelling complete!')
         self.model= model
         self.modelled_yet= True
+        self.data_freq= (data['DATETIME'].iloc[-1] - data['DATETIME'].iloc[-2]).total_seconds()
 
     def __adjust_format(self, event):
         format__= event.new.split('.')[-1]
@@ -431,13 +419,23 @@ class ConnectionWidgets(WidgetDefinitions):
                             )
     
     def predicted_update(self, data):
+        data= data.loc[-self.feature_shape.value:, :]
         data['DATETIME'] = pd.to_datetime(data['DATETIME'])
         curve = hv.Curve(data, kdims=['DATETIME'], vdims=['value']).opts(responsive=True, color='orange')#, width=1300, height= 700)
         area = hv.Area(data, vdims=['max', 'min'], kdims=['DATETIME']).opts(alpha=0.2, color='cyan')
         return (curve * area).opts(
                             opts.Curve(line_width=2)
                             )
-
+    
+    def forecasts_update(self, data):
+        data= data.loc[-self.feature_shape.value:, :]
+        data['FUTURE'] = pd.to_datetime(data['FUTURE'])
+        print(data)
+        curve = hv.Curve(data, kdims=['FUTURE'], vdims=['value']).opts(responsive=True, color='orange')#, width=1300, height= 700)
+        area = hv.Area(data, vdims=['max', 'min'], kdims=['FUTURE']).opts(alpha=0.2, color='cyan')
+        return (curve * area).opts(
+                            opts.Curve(line_width=2)
+                            )
 
     def hist_callback(self, data=None):
         # Convert 'DATETIME' column to datetime type
@@ -497,13 +495,13 @@ class ConnectionWidgets(WidgetDefinitions):
     
 
 
-    def gauge_callback(self):
+    def gauge_callback(self, mframe):
         max_= self.data['value'].max()
         min_= self.data['value'].min()
         if max_ == min_:
             max_ += 100
             min_ -= 100
-        value= self.data.tail(1)['value'].values[0]
+        value= mframe['value'].values[0]
         self.gauge.bounds= (min_, max_)
         self.gauge.value= value
 

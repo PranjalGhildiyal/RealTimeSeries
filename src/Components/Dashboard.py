@@ -34,11 +34,12 @@ class Dashboard(ConnectionWidgets):
         # Adding components for main here
         actual_stream= hv.DynamicMap(self.actual_update, streams=[self.dfstream])
         pred_stream= hv.DynamicMap(self.predicted_update, streams= [self.predstream])
+        forecast_stream= hv.DynamicMap(self.forecasts_update, streams=[self.forecaststream]).opts(axiswise=True)
 
-        lower_dashboard_dmap = pn.panel((actual_stream * pred_stream), sizing_mode='stretch_both')
-        histogram_dmap= pn.panel(hv.DynamicMap(self.hist_callback, streams=[self.dfstream]).opts(shared_axes=False),sizing_mode='stretch_both')
-        hist_dmap= pn.panel(hv.DynamicMap(self.gradient_pie, streams=[self.dfstream]).opts(shared_axes=False),sizing_mode='stretch_both')
-        box_dmap= pn.panel(hv.DynamicMap(self.boxplot, streams=[self.dfstream]).opts(shared_axes=False),sizing_mode='stretch_both')
+        lower_dashboard_dmap = pn.panel((actual_stream * pred_stream).opts(axiswise=True), sizing_mode='stretch_both')
+        histogram_dmap= pn.panel(hv.DynamicMap(self.hist_callback, streams=[self.dfstream]).opts(shared_axes=False, axiswise=True),sizing_mode='stretch_both')
+        hist_dmap= pn.panel(hv.DynamicMap(self.gradient_pie, streams=[self.dfstream]).opts(shared_axes=False, axiswise=True),sizing_mode='stretch_both')
+        box_dmap= pn.panel(hv.DynamicMap(self.boxplot, streams=[self.dfstream]).opts(shared_axes=False, axiswise=True),sizing_mode='stretch_both')
         print('Done till here!')
 
         # Making a new lower-dashboard
@@ -47,10 +48,11 @@ class Dashboard(ConnectionWidgets):
         main_dashboard= pn.GridSpec(min_width= 800, min_height= 600, sizing_mode='scale_both')
 
         main_dashboard[0, 0]= self.gauge
-        main_dashboard[0, 1:4] = histogram_dmap
+        main_dashboard[0, 1:4]= histogram_dmap
         main_dashboard[0, 4]= hist_dmap
-        main_dashboard[1, 0:4] = lower_dashboard_dmap
-        main_dashboard[1, 4] = box_dmap
+        main_dashboard[1, 0]= box_dmap
+        main_dashboard[1, 1:4]= lower_dashboard_dmap
+        main_dashboard[1, 4] = forecast_stream
 
 
         self.template.main.append(main_dashboard)
