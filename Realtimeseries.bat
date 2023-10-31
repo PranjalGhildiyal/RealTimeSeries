@@ -3,7 +3,7 @@ cd /d %~dp0
 set log_file=log.txt
 
 :: Set the name for the conda environment
-set conda_env_name=PranalGhildiyal_Realtimeseries
+set conda_env_name=PranjalGhildiyal_Realtimeseries
 
 :: Activate the conda environment
 call conda activate %conda_env_name%
